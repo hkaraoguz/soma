@@ -135,12 +135,10 @@ mongo::BSONObj QueryBuilder::buildSOMATimeQuery(int lowerhour,int lowerminute, i
         lowerhourbuilder.append("$gte",totalminutes);
         hourbuilder.append("logtimeminutes",lowerhourbuilder.obj());
 
-        /*   lowerminutebuilder.append("$gte",lowerminute);
 
-        minutebuilder.append("logminute",lowerminutebuilder.obj());*/
 
         builder.appendElements(hourbuilder.obj());
-        /*  builder.appendElements(minutebuilder.obj());*/
+
 
 
     }

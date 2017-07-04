@@ -85,11 +85,6 @@ class SOMAManager():
 
         self._msg_store=MessageStoreProxy(database="somadata", collection="object")
 
-        #Debug purposes
-        #objs = self._msg_store.query(SOMAObject._type, message_query={}, projection_query={"pose":1, "mesh":1},limit=2, sort_query=[("_id",-1)])
-	    #objs = self._msg_store.query(SOMAObject._type, message_query={})
-        #print objs
-
          # Get the SOMA map name and unique id
         resp = self._init_map()
         if resp == None:
@@ -99,7 +94,7 @@ class SOMAManager():
         self.soma_map = resp.map_name
         self.map_unique_id = resp.map_unique_id
 
-        rospy.loginfo("Map name: %s Map Unique ID: %s",self.soma_map,self.map_unique_id)
+        rospy.loginfo("SOMA Object Manager received Map name: %s Map Unique ID: %s",self.soma_map,self.map_unique_id)
 
         if(self._check_soma_insertservice() == False):
             return None
@@ -119,9 +114,9 @@ class SOMAManager():
 
     # Listens the map information from soma map_manager
     def _init_map(self):
-        print "Waiting for the map info from soma_map_manager..."
+        rospy.loginfo("Waiting for the map info from soma_map_manager...")
         try:
-            rospy.wait_for_service('soma/map_info', timeout=5)
+            rospy.wait_for_service('soma/map_info', timeout=10)
             rospy.loginfo("SOMA map info received...")
         except:
             rospy.logerr("No SOMA map_info service!! Quitting...")
@@ -438,6 +433,6 @@ if __name__=="__main__":
 
     args = parser.parse_args(rospy.myargv(argv=sys.argv)[1:])
 
-    rospy.init_node("soma_obj_manager")
+    rospy.init_node("soma_object_manager")
     rospy.loginfo("Running SOMA Manual Object Manager ( conf: %s, types: %s)", args.conf[0], args.t)
     SOMAManager(args.conf[0],args.t)
