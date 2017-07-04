@@ -23,7 +23,7 @@ from std_msgs.msg import String
 from soma_manager.msg import *
 
 
-# SOMA Data Manager For storing and deleting data
+# SOMA Data Manager for storing, editing and deleting data
 class SOMADataManager():
 
     def __init__(self, db_name="somadata", collection_name="object", roi_collection_name = "roi"):
@@ -38,10 +38,10 @@ class SOMADataManager():
 	if resp == None:
 		rospy.signal_shutdown("No map info provided...")
 		return None
-        #print resp
+
         self.map_name = resp.map_name
         self.map_unique_id = resp.map_unique_id
-        rospy.loginfo("Map name: %s Map unique ID: %s",self.map_name, self.map_unique_id)
+        rospy.loginfo("SOMA Data Manager received Map name: %s Map unique ID: %s",self.map_name, self.map_unique_id)
 
         # Initialize the mongodb proxy
         self._message_store = MessageStoreProxy(database=db_name, collection=collection_name)
@@ -67,9 +67,9 @@ class SOMADataManager():
 
     # Listens the map information from soma map_manager
     def _init_map(self):
-        print "SOMA Data Manager is waiting for SOMA Map Service..."
+        rospy.loginfo("SOMA Data Manager is waiting for SOMA Map Service...")
         try:
-            rospy.wait_for_service('soma/map_info', timeout = 30)
+            rospy.wait_for_service('soma/map_info', timeout = 10)
             #rospy.loginfo("SOMA Map Info received...")
         except:
             rospy.logerr("No 'soma/map_info' service, Quitting...")
@@ -171,7 +171,7 @@ class SOMADataManager():
         return SOMAInsertObjsResponse(True,_ids)
 
 
-    # Handles the delete request of soma objs
+    # Handles the delete request of soma objects
     def handle_delete_request(self,req):
 
         for oid in req.ids:
@@ -209,7 +209,7 @@ class SOMADataManager():
         obj.map_name = self.map_name
         obj.map_unique_id = self.map_unique_id
 
-        # SOMA Objects are represented as a 3D point in the world so this could be set here as point
+        # SOMA objects are represented as a 3D point in the world so this could be set here as point
         obj.geotype = "Point"
 
 

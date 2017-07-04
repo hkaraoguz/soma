@@ -38,45 +38,22 @@ SomaObjectDetailDialog::SomaObjectDetailDialog(QWidget *parent, soma_msgs::SOMAO
 
     this->imageIndex = 0;
 
-    if(this->somaobject.images.size() > 0 )
-    {
-        this->loadImage();
-
-    }
-
-    /*for(size_t i = 0; i < this->somaobject.images.size(); i++)
-    {
-        sensor_msgs::Image animage = somaobject.images[i];
-
-        if(animage.encoding == "bgr8")
-        {
+   // ROS_INFO("Number of images %d",this->somaobject.images.size());
 
 
-            QImage image((unsigned char*)animage.data.data(),animage.width,animage.height,animage.step,QImage::Format_Indexed8);
-
-
-            QPixmap map = QPixmap::fromImage(image);
-
-
-
-            ui->labelObjectImage->setScaledContents(true);
-
-
-
-            ui->labelObjectImage->setPixmap(map);
-        }
-
-
-
-    }*/
-
-
+    this->loadImage();
 
 
 }
 void SomaObjectDetailDialog::loadImage()
 {
+    // If we don't have any images stored, just return
+    if(this->somaobject.images.size() <= 0) return;
+
     sensor_msgs::Image animage = somaobject.images[this->imageIndex];
+
+    //There is something weird with this image, just return
+    if(animage.height <= 0 || animage.width <= 0) return ;
 
     QString imagecountstr = QString::number(this->imageIndex+1)+" / "+QString::number(this->somaobject.images.size());
 
@@ -117,12 +94,14 @@ void SomaObjectDetailDialog::on_buttonImageLeft_clicked()
         this->imageIndex--;
 
     this->loadImage();
+
 }
 
 void SomaObjectDetailDialog::on_buttonImageRight_clicked()
 {
     if(this->somaobject.images.size()-1 != this->imageIndex)
         this->imageIndex++;
+
 
     this->loadImage();
 
