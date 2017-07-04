@@ -90,10 +90,17 @@ mongo::BSONObj QueryBuilder::buildSOMAStringArrayBasedQuery(const std::vector<st
 
     realIndexes.insert(realIndexes.end(),objectIndexes.begin(),objectIndexes.end());
 
-    mongo::BSONArrayBuilder arrbuilder;
+
+    mongo::BSONObjBuilder builder3;
+
+    mongo::BSONArrayBuilder arrbuilder2;
 
     for(int j = 0 ;j < fieldnames.size(); j++)
     {
+        mongo::BSONArrayBuilder arrbuilder;
+
+        mongo::BSONObjBuilder builder2;
+
 
         for(int i = realIndexes[j]; i < realIndexes[j]+objectIndexes[j]; i++)
         {
@@ -103,14 +110,25 @@ mongo::BSONObj QueryBuilder::buildSOMAStringArrayBasedQuery(const std::vector<st
 
             arrbuilder.append(builder.obj());
 
+
+
         }
+
+        //mongo::BSONObjBuilder builder2;
+        builder2.append("$or",arrbuilder.arr());
+
+        arrbuilder2.append(builder2.obj());
+
+
     }
-    mongo::BSONObjBuilder builder;
 
-    builder.append(arrayOperator,arrbuilder.arr());
+     builder3.append(arrayOperator,arrbuilder2.arr());
 
 
-    return builder.obj();
+   // builder3.append(arrayOperator,arrbuilder2.arr());
+
+
+    return builder3.obj();
 
 
 }

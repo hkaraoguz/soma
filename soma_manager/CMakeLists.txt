@@ -15,6 +15,8 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   std_msgs
   soma_map_manager
+  geometry_msgs
+  
 )
 find_package(Qt5Core)
 ## System dependencies are found with CMake's conventions
@@ -66,6 +68,7 @@ add_service_files(
   SOMAQueryObjs.srv
   SOMAQueryROIs.srv
   SOMAInsertROIs.srv
+  SOMADrawMesh.srv
 #   Service2.srv
 )
 
@@ -83,6 +86,7 @@ add_service_files(
    soma_msgs
    sensor_msgs
    nav_msgs
+   geometry_msgs
  )
 
 ###################################
@@ -97,7 +101,7 @@ add_service_files(
 catkin_package(
    INCLUDE_DIRS src/query_manager/
 #  LIBRARIES soma_manager
-  CATKIN_DEPENDS interactive_markers mongodb_store rospy roscpp soma_msgs visualization_msgs message_runtime
+  CATKIN_DEPENDS interactive_markers mongodb_store rospy roscpp soma_msgs visualization_msgs message_runtime nav_msgs geometry_msgs
 #  DEPENDS system_lib
 )
 
@@ -164,11 +168,14 @@ install(TARGETS soma_query_manager_node
 )
 
 ## Mark cpp header files for installation
-# install(DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
+ install(DIRECTORY include/${PROJECT_NAME}/
+   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+   FILES_MATCHING PATTERN "*.h"
 #   PATTERN ".svn" EXCLUDE
-# )
+ )
+
+catkin_install_python(PROGRAMS src/soma_manager/mesh_drawer.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES

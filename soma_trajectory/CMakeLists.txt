@@ -60,7 +60,7 @@ install(DIRECTORY scripts/
         USE_SOURCE_PERMISSIONS)
 
 
-catkin_install_python(PROGRAMS src/soma_trajectory/visualizer.py
+catkin_install_python(PROGRAMS src/soma_trajectory/visualisation.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 

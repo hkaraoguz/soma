@@ -94,9 +94,11 @@ void MainWindow::on_timestepSlider_valueChanged(int value)
 
         this->somaobjects =  rosthread.querySOMAObjects(this->objectquery);
 
-        sensor_msgs::PointCloud2 state =  rosthread.getSOMACombinedObjectCloud(somaobjects);
+        rosthread.visualizeWorldState(somaobjects);
 
-        rosthread.publishSOMAObjectCloud(state);
+       /* sensor_msgs::PointCloud2 state =  rosthread.getSOMACombinedObjectCloud(somaobjects);
+
+        rosthread.publishSOMAObjectCloud(state);*/
 
         ui->noretrievedobjectslabel->setText(QString::number(somaobjects.size()));
 
@@ -449,8 +451,6 @@ void MainWindow::on_queryButton_clicked()
 
     bool upperdatecbox = ui->upperDateCBox->isChecked();
 
-    mongo::BSONObjBuilder mainbuilder;
-
     if(lowerdatecbox || upperdatecbox)
     {
 
@@ -581,21 +581,7 @@ void MainWindow::on_queryButton_clicked()
             queryObjects.request.objecttypes = typelist;
 
         }
-       /* else if(typeequals){
-            QModelIndexList indexlist = ui->listViewObjectTypes->selectionModel()->selectedIndexes();
 
-            std::vector<std::string> list;
-
-            foreach(const QModelIndex& indx, indexlist)
-            {
-                QString data = indx.data().toString();
-
-                list.push_back(data.toStdString());
-            }
-
-
-            queryObjects.request.objecttypes = list;
-        }*/
         if(idequals)
         {
             QModelIndexList indexlist = ui->listViewObjectIDs->selectionModel()->selectedIndexes();
@@ -669,9 +655,11 @@ void MainWindow::on_queryButton_clicked()
 
     ui->noretrievedobjectslabel->setText(QString::number(somaobjects.size()));
 
-    sensor_msgs::PointCloud2 state =  rosthread.getSOMACombinedObjectCloud(somaobjects);
+    rosthread.visualizeWorldState(somaobjects);
 
-    rosthread.publishSOMAObjectCloud(state);
+   /* sensor_msgs::PointCloud2 state =  rosthread.getSOMACombinedObjectCloud(somaobjects);
+
+    rosthread.publishSOMAObjectCloud(state);*/
 
 
     lastqueryjson = QString::fromStdString(queryObjects.response.queryjson);

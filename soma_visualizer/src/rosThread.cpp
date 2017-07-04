@@ -54,6 +54,9 @@ void RosThread::loop()
 
     this->roi_draw_client = n.serviceClient<soma_roi_manager::DrawROI>("soma/draw_roi");
 
+    this->mesh_draw_client = n.serviceClient<soma_manager::SOMADrawMesh>("soma/draw_mesh");
+
+
     soma_map_manager::MapInfo srv;
 
     ROS_INFO("Waiting for map_info service from soma_map_manager");
@@ -93,7 +96,7 @@ void RosThread::loop()
 
     if (map_client.call(srv))
     {
-        ROS_INFO("Map Info: %s Map Unique ID: %s", srv.response.map_name.data(), srv.response.map_unique_id.data());
+        ROS_INFO("SOMA Visualizer Received Map Info: %s Map Unique ID: %s", srv.response.map_name.data(), srv.response.map_unique_id.data());
         this->map_name = srv.response.map_name.data();
         this->map_unique_id = srv.response.map_unique_id.data();
 
@@ -149,6 +152,20 @@ void RosThread::fetchDataFromDB()
 
 
 
+}
+void RosThread::drawMesh(soma_manager::SOMADrawMesh drawmesh)
+{
+
+
+    /*drawmesh.request.mesh_paths = mesh_paths;
+
+    drawmesh.request.object_ids = object_ids;
+
+    drawmesh.request.object_poses = object_poses;
+
+    drawmesh.request.object_types = object_types;*/
+
+    this->mesh_draw_client.call(drawmesh);
 }
 void RosThread::drawROIwithID(std::string id, std::string config)
 {
@@ -440,7 +457,45 @@ soma_msgs::SOMAROIObject RosThread::getSOMAROIwithIDConfig(int id, std::string c
     return obj;
 
 }
-sensor_msgs::PointCloud2 RosThread::getSOMACombinedObjectCloud(const std::vector<soma_msgs::SOMAObject> &somaobjects)
+
+
+void RosThread::visualizeWorldState(const std::vector<soma_msgs::SOMAObject> &somaobjects)
+{
+    sensor_msgs::PointCloud2 combined_cloud = this->getCombinedObjectCloud(somaobjects);
+
+    soma_manager::SOMADrawMesh drawmesh = this->getObjectMeshes(somaobjects);
+
+    this->publishSOMAObjectCloud(combined_cloud);
+
+    this->drawMesh(drawmesh);
+
+}
+
+
+soma_manager::SOMADrawMesh RosThread::getObjectMeshes(const std::vector<soma_msgs::SOMAObject>& somaobjects)
+{
+    soma_manager::SOMADrawMesh drawmesh;
+
+    for(int i = 0; i < somaobjects.size(); i++)
+    {
+        if(somaobjects[i].mesh.size() > 1)
+        {
+            drawmesh.request.mesh_paths.push_back(somaobjects[i].mesh);
+            drawmesh.request.object_ids.push_back(somaobjects[i].id);
+            drawmesh.request.object_types.push_back(somaobjects[i].type);
+            drawmesh.request.object_poses.push_back(somaobjects[i].pose);
+        }
+
+    }
+
+    return drawmesh;
+
+
+
+}
+
+
+sensor_msgs::PointCloud2 RosThread::getCombinedObjectCloud(const std::vector<soma_msgs::SOMAObject> &somaobjects)
 {
     sensor_msgs::PointCloud2 result;
 
@@ -466,12 +521,16 @@ sensor_msgs::PointCloud2 RosThread::getSOMACombinedObjectCloud(const std::vector
     for(int i = 0; i < somaobjects.size(); i++)
     {
         sensor_msgs::PointCloud2 cloud = somaobjects[i].cloud;
-        Cloud pclcloud;
-        pcl::fromROSMsg(cloud,pclcloud);
-        cc.points.resize(cc.width*cc.height + pclcloud.height*pclcloud.width);
-        cc += pclcloud;
 
-        if(i == 30) break;
+        if(cloud.data.size() > 0)
+        {
+            Cloud pclcloud;
+            pcl::fromROSMsg(cloud,pclcloud);
+            cc.points.resize(cc.width*cc.height + pclcloud.height*pclcloud.width);
+            cc += pclcloud;
+        }
+
+        //if(i == 30) break;
 
 
     }

@@ -1,0 +1,7 @@
+string[] mesh_paths    ### Mesh paths 
+string[] object_types  ### The types of the objects
+string[] object_ids    ### The ids of the objects
+geometry_msgs/Pose[] object_poses ### The poses of the objects
+---
+bool result
+
