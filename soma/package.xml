@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>soma</name>
-  <version>2.0.1</version>
+  <version>2.1.0</version>
   <description>The soma package</description>
   <maintainer email="l.kunze@cs.bham.ac.uk">Lars Kunze</maintainer>
   <license>MIT</license>
@@ -21,7 +21,6 @@
   <!-- Use test_depend for packages you need only for testing: -->
   <!--   <test_depend>gtest</test_depend> -->
 
-  <run_depend>soma_geospatial_store</run_depend>
   <run_depend>soma_pcl_segmentation</run_depend>
   <run_depend>soma_roi_manager</run_depend>
   <run_depend>soma_manager</run_depend>
