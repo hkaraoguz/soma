@@ -1,4 +1,4 @@
 string[] ids    #### Vector of SOMA ids
-string   config #### SOMA configuration
+string config   #### SOMA configuration
 ---
 bool result

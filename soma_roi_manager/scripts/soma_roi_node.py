@@ -12,15 +12,15 @@ if __name__=="__main__":
 
     parser = argparse.ArgumentParser(prog='soma_roi.py')
     parser.add_argument(
-        "conf", nargs=1, help='Name of the roi configuration. Put [] with "," to have more than one configuration. For example: [config1,config2]'
+        "conf", nargs=1, help='Name of the roi configuration. Put [] with "," to launch multiple ROI configuration instances. For example: "[config1,config2]"'
     )
-    parser.add_argument('-t', metavar='config-file')
+    parser.add_argument('-t', metavar='config-file',help="Config file path for reading the room types")
     parser.add_argument('--db_name', help='Name of the roi db',default="somadata")
     parser.add_argument('--collection_name', help='Name of the roi collection',default="roi")
 
     args = parser.parse_args(rospy.myargv(argv=sys.argv)[1:])
 
-    rospy.init_node("soma_roi")
+    rospy.init_node("soma_roi_manager")
     configs = args.conf[0].replace(" ", "")
     configs = configs.replace("[", "")
     configs = configs.replace("]", "")

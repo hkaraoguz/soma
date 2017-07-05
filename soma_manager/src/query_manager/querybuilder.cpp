@@ -1,4 +1,4 @@
-#include "querybuilder.h"
+#include <query_manager/querybuilder.h>
 
 QueryBuilder::QueryBuilder()
 {
@@ -90,15 +90,19 @@ mongo::BSONObj QueryBuilder::buildSOMAStringArrayBasedQuery(const std::vector<st
 
     realIndexes.insert(realIndexes.end(),objectIndexes.begin(),objectIndexes.end());
 
-
+    // This is the main builder
     mongo::BSONObjBuilder builder3;
 
+    // This is the main array structure that holds the individual fields
     mongo::BSONArrayBuilder arrbuilder2;
 
+    // For each of the fields
     for(int j = 0 ;j < fieldnames.size(); j++)
     {
+        // We will build an or array
         mongo::BSONArrayBuilder arrbuilder;
 
+        // Here we will hold the variables of a particular field
         mongo::BSONObjBuilder builder2;
 
 
@@ -114,18 +118,16 @@ mongo::BSONObj QueryBuilder::buildSOMAStringArrayBasedQuery(const std::vector<st
 
         }
 
-        //mongo::BSONObjBuilder builder2;
+        // This is the bson object for a field
         builder2.append("$or",arrbuilder.arr());
 
+        // We add the particular field to the main array
         arrbuilder2.append(builder2.obj());
 
 
     }
-
+     // This is the final object
      builder3.append(arrayOperator,arrbuilder2.arr());
-
-
-   // builder3.append(arrayOperator,arrbuilder2.arr());
 
 
     return builder3.obj();

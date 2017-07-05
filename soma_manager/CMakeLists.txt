@@ -68,6 +68,8 @@ add_service_files(
   SOMAQueryObjs.srv
   SOMAQueryROIs.srv
   SOMAInsertROIs.srv
+  SOMAUpdateROI.srv
+  SOMADeleteROIs.srv
   SOMADrawMesh.srv
 #   Service2.srv
 )
@@ -99,7 +101,7 @@ add_service_files(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-   INCLUDE_DIRS src/query_manager/
+   INCLUDE_DIRS include
 #  LIBRARIES soma_manager
   CATKIN_DEPENDS interactive_markers mongodb_store rospy roscpp soma_msgs visualization_msgs message_runtime nav_msgs geometry_msgs
 #  DEPENDS system_lib
@@ -113,8 +115,8 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
+  include
   ${catkin_INCLUDE_DIRS}
-  src/query_manager/
 )
 
 add_custom_target(SOURCES "src/query_manager/query_manager.cpp")
@@ -130,7 +132,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
 # )
 
 ## Declare a cpp executable
- add_executable(soma_query_manager_node  src/query_manager/query_manager.cpp   src/query_manager/querybuilder.h  src/query_manager/querybuilder.cpp)
+ add_executable(soma_query_manager_node  src/query_manager/query_manager.cpp   include/query_manager/querybuilder.h  src/query_manager/querybuilder.cpp)
 add_dependencies(soma_query_manager_node soma_msgs_generate_messages_cpp soma_manager_generate_messages_cpp)
 
  qt5_use_modules(soma_query_manager_node Core)
@@ -168,8 +170,8 @@ install(TARGETS soma_query_manager_node
 )
 
 ## Mark cpp header files for installation
- install(DIRECTORY include/${PROJECT_NAME}/
-   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+ install(DIRECTORY include/
+   DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}
    FILES_MATCHING PATTERN "*.h"
 #   PATTERN ".svn" EXCLUDE
  )

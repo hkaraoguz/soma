@@ -63,10 +63,11 @@ def b_func(x):
     return value
 
 
-class SOMAManager():
+class SOMAObjectManager():
 
     def __init__(self, soma_conf, config_file=None):
 
+        rospy.init_node("soma_object_manager")
         #self.soma_map = soma_map
         self.soma_conf = soma_conf
         if config_file:
@@ -82,8 +83,6 @@ class SOMAManager():
         self._soma_obj_msg = dict()
 
         self._interactive = True
-
-        self._msg_store=MessageStoreProxy(database="somadata", collection="object")
 
          # Get the SOMA map name and unique id
         resp = self._init_map()
@@ -110,6 +109,10 @@ class SOMAManager():
 
         self.load_objects()
 
+
+
+        rospy.loginfo("Running SOMA Object Manager ( Configuration Name: %s, Object Types File Path: %s)", self.soma_conf, self._config_file)
+
         rospy.spin()
 
     # Listens the map information from soma map_manager
@@ -134,10 +137,10 @@ class SOMAManager():
         print "Waiting for SOMA object insert service..."
         try:
             rospy.wait_for_service('soma/insert_objects', timeout=5)
-            rospy.loginfo("SOMA insert service is active...")
+            rospy.loginfo("SOMA object insert service is active...")
             return True
         except:
-            rospy.logerr("No SOMA insert service!! Quitting...")
+            rospy.logerr("No SOMA object insert service!! Quitting...")
             return False
     # Checks the soma insert service information from soma data_manager
     def _check_soma_queryservice(self):
@@ -147,7 +150,7 @@ class SOMAManager():
             rospy.loginfo("SOMA object query service is active...")
             return True
         except:
-            rospy.logerr("No SOMA query service!! Quitting...")
+            rospy.logerr("No SOMA object query service!! Quitting...")
             return False
 
     def _init_types(self):
@@ -340,7 +343,6 @@ class SOMAManager():
         except:
             rospy.logerr("Error deleting object!! soma/delete_objects service call failed!")
 
-        #self._msg_store.delete(str(_id))
 
 
 
@@ -420,19 +422,3 @@ class SOMAManager():
         int_marker.controls.append(menu_control)
 
         return int_marker
-
-
-if __name__=="__main__":
-
-    # TODO: add list command
-
-    parser = argparse.ArgumentParser(prog='soma.py')
-    #parser.add_argument("map", nargs=1, help='Name of the used 2D map')
-    parser.add_argument("conf", nargs=1, help='Name of the object configuration')
-    parser.add_argument('-t', metavar='config-file')
-
-    args = parser.parse_args(rospy.myargv(argv=sys.argv)[1:])
-
-    rospy.init_node("soma_object_manager")
-    rospy.loginfo("Running SOMA Manual Object Manager ( conf: %s, types: %s)", args.conf[0], args.t)
-    SOMAManager(args.conf[0],args.t)

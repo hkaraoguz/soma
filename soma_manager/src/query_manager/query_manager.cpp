@@ -1,6 +1,6 @@
 #include <ros/ros.h>
 #include <mongodb_store/message_store.h>
-#include "querybuilder.h"
+#include <query_manager/querybuilder.h>
 #include <soma_manager/SOMAQueryObjs.h>
 #include <soma_manager/SOMAQueryROIs.h>
 #include <soma_map_manager/MapInfo.h>
