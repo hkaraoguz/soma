@@ -545,6 +545,7 @@ class SOMAROIManager():
 
             self.insert_soma_time_fields(soma_obj)
 
+            #This should compare 2 soma roi objects!!
             aresp = self.check_time_diff_and_update(_id,soma_obj,resp)
 
             if aresp == None or aresp.result == False:
