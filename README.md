@@ -1,7 +1,7 @@
-SOMA
+SOMa
 ====
 
-Semantic Object Map (SOMA) package. SOMA can include objects, regions of interest (ROI) and trajectories. It is based on Mongodb for storing high-level data obtained from perceptual pipeline of a robot. The extracted data could be stored along with spatial and temporal information which can be later used for building high-level queries with spatio-temporal constraints.
+Semantic Object Map (SOMa) package. SOMa is a framework designed for storing perceptual information at different abstraction levels. SOMa can store objects, regions of interest (ROI) and trajectories. The framework is based on ROS and MongoDB. The extracted data is stored with spatial and temporal information. As such it can be later queried with combination of spatio-temporal constraints.
 
 
 Prerequisites
@@ -15,7 +15,7 @@ Prerequisites
 
 Getting started (general steps)
 -------------------------------
-1. Start the ros core:
+1. Start the roscore:
 
     ```
    $ roscore
@@ -25,45 +25,37 @@ Getting started (general steps)
     ```
     $ roslaunch mongodb_store mongodb_store.launch db_path:=<path_to_db>
     ```
-By default, the SOMA data are stored in `somadata` database. The collections under this database are `object` for SOMA objects, `roi` for SOMA rois and `map` for 2D occupancy maps.
+By default, the SOMa data are stored in `somadata` database. The collections under this database are `object` for SOMA objects, `roi` for SOMA rois and `map` for 2D occupancy maps.
 
-SOMA map manager
+SOMa map manager
 ----------------
-3. SOMA is based on the assumption that all the data are with respect to 2D global map frame. So it is **mandatory to publish a 2D map using SOMA map manager** before using SOMA. This node is used for storing, reading and publishing 2D map:
+SOMa is based on the assumption that all the data are with respect to 2D global map frame. So it is **mandatory to publish a 2D map using SOMA map manager** before using any other component of SOMa. This node is used for storing, reading and publishing 2D map:
 ```
 $ rosrun soma_map_manager soma_map_manager_node.py --mapname <map_name>
 ```
-If there are any stored 2D occupancy maps in the datacenter, the name of the map could be inputted as an argument to the map manager. Alternatively, user can choose the map to be published from the outputted list. If there are no stored maps, it will wait for a 2D map to be published from map_server. Run the map_server with a 2D map:
+If there are any stored 2D occupancy maps in the datacenter, the name of the map could be inputted as an argument to the map manager. Alternatively, user can choose the map to be published from the outputted list. If there are no stored maps, it will wait for a 2D map to be published from map_server. In order to add a map to SOMa, run the map_server with a 2D map:
   ```
   $ rosrun map_server map_server <map.yaml>
   ```
 where `map.yaml` specifies the map you want to load. After running the `map_server`, you should save the published map using the `SOMA map manager`.
 
-4. If you want to check the published map, start RVIZ, add a Map display type and subscribe to the `soma/map` topic:
+If you want to check the published map, start RVIZ, add a Map display type and subscribe to the `soma/map` topic:
 
   ```
   $ rosrun rviz rviz
   ```
 
-SOMA ROI manager
-----------------
+Launching SOMa framework
+-------------------------
+The easiest way to run the basic SOMa system is to use the provided launch file:
+```
+$ roslaunch soma_manager soma_local.launch map_name:=<map_name>
+```
+where `map_name` should be one of the stored maps in the SOMa framework.
 
-5. If you want to create SOMA ROIs, run the SOMA ROI manager:
-
-    ```
-    $ rosrun soma_roi_manager soma_roi_node.py <config_name>
-    ```
-where `config_name` denotes an object configuration name. By default, the configuration file `soma_roi_manager/config/default.json` is used to initialize the list of available ROI types. Alternatively, the following command can be used to use a different configuration file:
-
-    ```
-    $ rosrun soma_roi_manager soma_roi.py -t /path/to/config/file <config>
-    ```
-2D `map` information will be gathered from `soma/map_info` service of `SOMA map manager`.
-6. In RVIZ, add an InteractiveMarker display type, and subscribe to the `/soma_roi/update` topic:
-7. Add, delete, modify ROIs in RVIZ using the interactive marker and the context menu (right-mouse-click)
-
-
-![marker](https://raw.githubusercontent.com/kunzel/soma/master/doc/images/soma_roi.png)
+SOMa Extensions
+-----------------------
+SOMa Framework has variety of extensions for handling data. For creating convex regions [SOMa ROI manager](../blob/indigo-devel/soma_roi_manager/README.md)
 
 ROS Services
 --------
