@@ -55,7 +55,7 @@ where `map_name` should be one of the stored maps in the SOMa framework.
 
 SOMa Extensions
 -----------------------
-SOMa Framework has variety of extensions for handling data. For creating convex regions [SOMa ROI manager](../blob/indigo-devel/soma_roi_manager/README.md)
+SOMa Framework has variety of extensions for handling data. For creating convex regions [SOMa ROI manager](../indigo-devel/soma_roi_manager/)
 
 ROS Services
 --------
