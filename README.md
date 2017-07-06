@@ -25,11 +25,11 @@ Getting started (general steps)
     ```
     $ roslaunch mongodb_store mongodb_store.launch db_path:=<path_to_db>
     ```
-By default, the SOMa data are stored in `somadata` database. The collections under this database are `object` for SOMA objects, `roi` for SOMA rois and `map` for 2D occupancy maps.
+By default, the SOMa data are stored in `somadata` database. The collections under this database are `object` for SOMa objects, `roi` for SOMa rois and `map` for 2D occupancy maps.
 
 SOMa map manager
 ----------------
-SOMa is based on the assumption that all the data are with respect to 2D global map frame. So it is **mandatory to publish a 2D map using SOMA map manager** before using any other component of SOMa. This node is used for storing, reading and publishing 2D map:
+SOMa is based on the assumption that all the data are with respect to 2D global map frame. So it is **mandatory to publish a 2D map using SOMa map manager** before using any other component of SOMa. This node is used for storing, reading and publishing 2D map:
 ```
 $ rosrun soma_map_manager soma_map_manager_node.py --mapname <map_name>
 ```
@@ -37,7 +37,7 @@ If there are any stored 2D occupancy maps in the datacenter, the name of the map
   ```
   $ rosrun map_server map_server <map.yaml>
   ```
-where `map.yaml` specifies the map you want to load. After running the `map_server`, you should save the published map using the `SOMA map manager`.
+where `map.yaml` specifies the map you want to load. After running the `map_server`, you should save the published map using the `SOMa map manager`.
 
 If you want to check the published map, start RVIZ, add a Map display type and subscribe to the `soma/map` topic:
 
@@ -45,7 +45,7 @@ If you want to check the published map, start RVIZ, add a Map display type and s
   $ rosrun rviz rviz
   ```
 
-Launching SOMa framework
+Running the basic SOMa framework
 -------------------------
 The easiest way to run the basic SOMa system is to use the provided launch file:
 ```
@@ -55,41 +55,16 @@ where `map_name` should be one of the stored maps in the SOMa framework.
 
 SOMa Extensions
 -----------------------
-SOMa Framework has variety of extensions for handling data. For creating convex regions [SOMa ROI manager](../indigo-devel/soma_roi_manager/)
+SOMa Framework has different extensions for handling and visualizing data.
 
-ROS Services
---------
-The other nodes can communicate with SOMA using the SOMA service calls. In order to use these services, one should run the soma data manager:
-## SOMA data manager
-1. Run the soma data manager:
-```
-$ rosrun soma_manager data_manager_node.py
---object_collection_name <collection_name> --object_db_name <db_name>
-```
-The parameters `db_name` and `collection_name` are optional which can be used to define the database and collection name for data storage.
+1. For creating and editing convex regions [SOMa ROI manager](../indigo-devel/soma_roi_manager/)
 
-## SOMA query manager
-1. Run the soma query manager:
-```
-$ rosrun soma_query_manager query_manager_node
-<object_db_name> <object_collection_name> <roi_db_name> <roi_collection_name>
-```
+2. For adding and editing virtual objects  [SOMa Object manager](../indigo-devel/soma_object_manager/)
 
-By default the data is stored under default db and collections :
+3. For visualizing and querying the objects and regions [SOMa visualizer](../indigo-devel/soma_visualizer/)
 
-|                 |  object  |    ROI   |    map   |
-|:---------------:|:--------:|:--------:|:--------:|
-|     db_name     | somadata | somadata | somadata |
-| collection_name |  object  |    roi   |    map   |
+4. For low-level perceptual data interface [SOMa llsd](../indigo-devel/soma_llsd/)
 
+5. For high-level data interface [SOMa manager](../indigo-devel/soma_manager/)
 
-### Object insertion
-One or multiple SOMA objects can be inserted using the SOMA service call `/soma/insert_objects`. The unique mongodb ids and a boolean value are returned. The boolean return value determines whether the request was successfully completed or not.
-### Object deletion
-One or multiple SOMA objects can be deleted using the SOMA service call `/soma/delete_objects`. The SOMA object ids are used for deletion. The boolean return value determines whether the request was successfully completed or not.
-### Object update
-A SOMA object can be updated using the SOMA service call `/soma/update_object`. The boolean return value determines whether the request was successfully completed or not.
-### Object query
-SOMA objects could be queried using SOMA service call `/soma/query_objects`. The query request should be filled according to the spatio-temporal constraints. The results are returned based on the query type and constraints.
-### ROI query
-SOMA ROIs could be queried using SOMA service call `/soma/query_rois`. The query request should be filled according to the spatio-temporal constraints. The results are returned based on the query type and constraints.
+6. For editing and visualizing human trajectories  [SOMa trajectory](../indigo-devel/soma_trajectory/)

@@ -4,7 +4,7 @@ import rospy
 import argparse
 import sys
 
-from soma_manager.object_manager import SOMAObjectManager
+from soma_object_manager.soma_object_manager import SOMAObjectManager
 
 
 

@@ -1,6 +1,6 @@
-# SOMA Low-Level Sensory Datastore
+# SOMa Low-Level Sensory Datastore
 
-This package provides a totally optional set of helper tools for the task of composing SOMA objects from individual observations of real-world objects. The tools here, provide a custom set of ROS messages and services. The classic use-case for this package being that of collecting multiple observations of a single or multiple objects before merging them into combined object models. In this use-case, the raw data and low-level segmented observations are stored in the data structures provided by this package, and are used as the source material to create high-level SOMA objects. However, the implementation of how these things are achieved -- data collection, segmentation, processing -- are all left up to the application developer.
+This package provides a totally optional set of helper tools for the task of composing SOMa objects from individual observations of real-world objects. The tools here, provide a custom set of ROS messages and services. The classic use-case for this package being that of collecting multiple observations of a single or multiple objects before merging them into combined object models. In this use-case, the raw data and low-level segmented observations are stored in the data structures provided by this package, and are used as the source material to create high-level SOMa objects. However, the implementation of how these things are achieved -- data collection, segmentation, processing -- are all left up to the application developer.
 
 # Messages
 
@@ -14,4 +14,4 @@ Given a `Scene`, processing such as segmentation is usually applied to extract o
 
   In general, all fields in all messages are optional, and arbitrary extra relationships between messages can be encoded by using the meta_data fields, which are intended to be filled by JSON objects.
 
-  Services are deliberately kept bare-bones, as in contrast to the main SOMA services that provide feature-rich query services, it is intended that users of the LLSD perform more complicated query tasks by using MongoDB queries.
+  Services are deliberately kept bare-bones, as in contrast to the main SOMa services that provide feature-rich query services, it is intended that users of the LLSD perform more complicated query tasks by using MongoDB queries.

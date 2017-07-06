@@ -1,7 +1,7 @@
-SOMA Trajectory
+SOMa Trajectory
 ====
 
-SOMA Trajectory is a package to query and display human trajectories.
+SOMa Trajectory is a package to query and display human trajectories.
 It includes a simple visual interface to query spatio-temporal constraints.
 
 Prerequisites
@@ -46,7 +46,7 @@ SOMa map manager
     ```
 
 
-SOMA Trajectory Visualizer
+SOMa Trajectory Visualizer
 ---------------
 You can run the visualizer by calling ```rosrun soma_trajectory soma_trajectory_manager.py``` and ```rosrun soma_trajectory visualiser.py```
 

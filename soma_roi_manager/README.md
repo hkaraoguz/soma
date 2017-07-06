@@ -1,8 +1,8 @@
-SOMA ROI manager
+SOMa ROI manager
 ----------------
-SOMa ROI manager is useful for creating and storing convex regions on top of a 2D map which are called as SOMa ROIs. User can create different types of regions in arbitrary convex shapes.
+This node is a tool for creating and storing convex regions on top of a 2D map which are called as SOMa ROIs. User can create different types of regions in arbitrary convex shapes.
 
-1. If you want to create SOMA ROIs, run the SOMA ROI manager:
+1. If you want to create SOMa ROIs, run the SOMa ROI manager:
 
     ```
     $ rosrun soma_roi_manager soma_roi_node.py <config_name>

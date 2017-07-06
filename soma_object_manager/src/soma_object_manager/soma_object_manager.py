@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import roslib; roslib.load_manifest("soma_manager")
+import roslib; roslib.load_manifest("soma_object_manager")
 import rospy
 from rospkg import RosPack
 import json

@@ -81,7 +81,7 @@ class SOMAMeshDrawer():
         s = rospy.Service('soma/draw_mesh', SOMADrawMesh, self.handle_draw_mesh)
 
        # Publisher vis_pub = node_handle.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
-        self.markerpub = rospy.Publisher("soma_meshes", MarkerArray, queue_size=1)
+        self.markerpub = rospy.Publisher("soma_object_meshes", MarkerArray, queue_size=1)
 
         rospy.spin()
 
