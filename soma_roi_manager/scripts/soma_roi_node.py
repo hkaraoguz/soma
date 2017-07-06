@@ -15,8 +15,6 @@ if __name__=="__main__":
         "conf", nargs=1, help='Name of the roi configuration. Put [] with "," to launch multiple ROI configuration instances. For example: "[config1,config2]"'
     )
     parser.add_argument('-t', metavar='config-file',help="Config file path for reading the room types")
-    parser.add_argument('--db_name', help='Name of the roi db',default="somadata")
-    parser.add_argument('--collection_name', help='Name of the roi collection',default="roi")
 
     args = parser.parse_args(rospy.myargv(argv=sys.argv)[1:])
 
@@ -26,5 +24,5 @@ if __name__=="__main__":
     configs = configs.replace("]", "")
     configs = configs.split(",")
     for config in configs:
-        SOMAROIManager(config,args.t,args.db_name,args.collection_name)
+        SOMAROIManager(config,args.t)
     rospy.spin()

@@ -83,7 +83,7 @@ class SOMAROIDrawer():
         s = rospy.Service('soma/draw_roi', DrawROI, self.handle_draw_roi)
 
        # Publisher vis_pub = node_handle.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
-        self.markerpub = rospy.Publisher("soma_roi_marker_array", MarkerArray, queue_size=1)
+        self.markerpub = rospy.Publisher("soma_rois", MarkerArray, queue_size=1)
 
         rospy.spin()
 

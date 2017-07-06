@@ -113,7 +113,7 @@ void RosThread::loop()
     }
 
 
-    pcp = n.advertise<sensor_msgs::PointCloud2>("soma_visualizer_node/world_state_3d",1);
+    pcp = n.advertise<sensor_msgs::PointCloud2>("soma_visualizer/soma_object_clouds",1);
 
     ros::Rate loop(10);
 
@@ -126,8 +126,6 @@ void RosThread::loop()
     while(ros::ok())
     {
 
-
-        // velocityCommandPublisher.publish(velocityCommand);
 
         ros::spinOnce();
 
@@ -156,14 +154,6 @@ void RosThread::fetchDataFromDB()
 void RosThread::drawMesh(soma_manager::SOMADrawMesh drawmesh)
 {
 
-
-    /*drawmesh.request.mesh_paths = mesh_paths;
-
-    drawmesh.request.object_ids = object_ids;
-
-    drawmesh.request.object_poses = object_poses;
-
-    drawmesh.request.object_types = object_types;*/
 
     this->mesh_draw_client.call(drawmesh);
 }

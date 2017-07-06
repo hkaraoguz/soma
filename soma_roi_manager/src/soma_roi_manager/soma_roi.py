@@ -80,7 +80,7 @@ def b_func(x):
 
 class SOMAROIManager():
 
-    def __init__(self, soma_conf, config_file=None, db_name ="somadata", collection_name="roi"):
+    def __init__(self, soma_conf, config_file=None):
 
         self.map_unique_id = -1
         self.soma_conf = soma_conf
@@ -100,16 +100,12 @@ class SOMAROIManager():
         self._soma_obj_pose = dict()
         self._soma_obj_markers = dict()
 
-        self.db_name = db_name
-        self.collection_name = collection_name
 
         self._interactive = True
 
-        self._msg_store=MessageStoreProxy(database=self.db_name, collection=self.collection_name)
-
         self._server = InteractiveMarkerServer("soma_roi/%s" % soma_conf)
 
-        rospy.loginfo("Running SOMA ROI Manager (Configuration Name: %s, Configuration File Path: %s db_name: %s collection_name: %s)", self.soma_conf, self._config_file,self.db_name,self.collection_name)
+        rospy.loginfo("Running SOMA ROI Manager (Configuration Name: %s, Configuration File Path: %s)", self.soma_conf, self._config_file)
 
         self._init_types()
 
@@ -123,7 +119,7 @@ class SOMAROIManager():
             return
         self.soma_map_name = resp.map_name
         self.map_unique_id = resp.map_unique_id
-        str_msg = "Map name: ",self.soma_map_name," Unique ID: ",self.map_unique_id
+        str_msg = "SOMA ROI Manager received Map name: ",self.soma_map_name," Unique ID: ",self.map_unique_id
         rospy.loginfo(str_msg)
 
         self._init_menu()
@@ -204,9 +200,12 @@ class SOMAROIManager():
     def _del_cb(self, feedback):
         rospy.loginfo("Delete ROI: %s", feedback.marker_name)
         roi_and_index = feedback.marker_name.split('_')
+
         roi = roi_and_index[0]
+        marker_index = roi_and_index[1]
+
         rospy.loginfo("ROI Info %s",roi)
-        self.delete_object(roi,feedback.marker_name,True)
+        self.delete_object(roi,marker_index,feedback.marker_name,True)
 
     # Add Vertex callback
     def _add_point_cb(self, feedback):
@@ -221,7 +220,7 @@ class SOMAROIManager():
         soma_roi = self._soma_obj_msg[roi_and_index[0]]
 
         # This is the type of the roi (Office, Library, etc..)
-        t   = self._soma_obj_type[roi_and_index[0]]
+        roi_type   = self._soma_obj_type[roi_and_index[0]]
 
         # Get the pose and create the new object a little away
         pose = feedback.pose
@@ -230,7 +229,7 @@ class SOMAROIManager():
         ######################################################
 
         # Add object
-        self.add_object(t, pose, soma_roi.id)
+        self.add_object(roi_type, pose, soma_roi.id)
 
         # Draw the ROI
         self.draw_roi(soma_roi)
@@ -243,28 +242,18 @@ class SOMAROIManager():
         roi_and_index = feedback.marker_name.split('_')
 
         # Find out which marker wants to be deleted
-        markerindex = roi_and_index[1]
+        marker_index = roi_and_index[1]
         roi = roi_and_index[0]
 
-        marker = self._soma_obj_markers[roi][markerindex]
+        marker = self._soma_obj_markers[roi][marker_index]
         keys = self._soma_obj_markers[roi].keys();
 
         if(len(keys) == 3):
             rospy.logerr("The minimum number of vertices is 3. You cannot delete more vertices!!")
             return
 
-        #this was the last marker of this roi so we should delete the roi
-        if(len(keys)==1):
-            self.delete_object(roi,feedback.marker_name,True)
-            return
 
-        # We only want to delete particular marker
-        del self._soma_obj_markers[roi][markerindex]
-
-        # We delete the particular pose of that marker
-        del self._soma_obj_pose[roi][markerindex]
-
-        self.delete_object(roi,feedback.marker_name,False)
+        self.delete_object(roi,marker_index,feedback.marker_name,False)
 
         soma_roi = self._soma_obj_msg[roi]
 
@@ -322,8 +311,7 @@ class SOMAROIManager():
     def _retrieve_objects(self):
 
         query_service = rospy.ServiceProxy('soma/query_rois',SOMAQueryROIs)
-        resp = query_service(query_type=0,roiconfigs=[self.soma_conf],returnmostrecent=True)#self._msg_store.query(SOMAROIObject._type, message_query={"map_name": self.soma_map_name, "config":self.soma_conf, "returnmostrecent":True})
-
+        resp = query_service(query_type=0,roiconfigs=[self.soma_conf],returnmostrecent=True)
         max_id = 0
 
         ids = []
@@ -407,7 +395,7 @@ class SOMAROIManager():
         return sortedposes
 
     def draw_roi(self, soma_roi):
-        #print soma_roi
+
         t = soma_roi.type
 
         p = self.sort_marker_positions(self._soma_obj_pose[soma_roi.id])
@@ -425,6 +413,28 @@ class SOMAROIManager():
     def undraw_roi(self, roi):
         self._server.erase("ROI-" + roi.id)
         self._server.applyChanges()
+
+    def insert_soma_time_fields(self,soma_obj,timestamp=None):
+
+        if timestamp == None:
+
+            #convert to uint32
+            soma_obj.logtimestamp = int(rospy.get_rostime().to_sec()) & 0xffffffff
+
+            dt = datetime.utcfromtimestamp(soma_obj.logtimestamp)
+            soma_obj.loghour = int(dt.hour)
+            soma_obj.logminute = int(dt.minute)
+            soma_obj.logday = int(dt.weekday())+1
+            soma_obj.logtimeminutes = int(dt.hour)*60 + int(dt.minute)
+        else:
+            #convert to uint32
+            soma_obj.logtimestamp = timestamp & 0xffffffff
+
+            dt = datetime.utcfromtimestamp(soma_obj.logtimestamp)
+            soma_obj.loghour = int(dt.hour)
+            soma_obj.logminute = int(dt.minute)
+            soma_obj.logday = int(dt.weekday())
+            soma_obj.logtimeminutes = int(dt.hour)*60 + int(dt.minute)
 
     # Called when a marker is added
     def load_object(self, soma_id, soma_type, pose):
@@ -499,6 +509,7 @@ class SOMAROIManager():
                 self.insert_geo_poses(soma_obj)
             else:
                 rospy.logerr("Error inserting new ROI %s %s. Not enough vertices!" % (soma_obj.type, soma_obj.id))
+                return
 
             try:
                 insert_service = rospy.ServiceProxy('soma/insert_rois',SOMAInsertROIs)
@@ -514,126 +525,109 @@ class SOMAROIManager():
 
 
     #soma_type = Office, Kitchen, etc, Pose is position
-    def add_object(self, soma_type, pose, soma_id=None):
+    def add_object(self, soma_type, pose, roi_id=None):
 
+        _id = self._soma_obj_ids[roi_id]
 
-        msg = self._soma_obj_msg[soma_id]
-        _id = self._soma_obj_ids[soma_id]
-
-        new_msg = copy.deepcopy(msg)
-
+        # Get the latest version of the ROI from DB
         try:
             query_service = rospy.ServiceProxy('soma/query_rois',SOMAQueryROIs)
-            resp = query_service(query_type=0,roiconfigs=[self.soma_conf],roiids=[soma_id],returnmostrecent=True)
+            resp = query_service(query_type=0,roiconfigs=[self.soma_conf],roiids=[roi_id],returnmostrecent=True)
         except rospy.ServiceException as exc:
             rospy.logerr("SOMA Query Service Exception %s"%(str(exc)))
             return
 
+        # Something is wrong!
         if(len(resp.rois) == 0):
-            rospy.logerr("Error!! Cannot get ROI %s %s from db!!"%(soma_type,soma_id))
+            rospy.logerr("Error!! Cannot get ROI %s %s from db!!"%(soma_type,roi_id))
             return
 
+        # Make a copy of the latest roi
         soma_obj = copy.deepcopy(resp.rois[0])
 
-        if soma_obj:
+        self.load_object(str(roi_id), soma_type, pose)
 
-            self.load_object(str(soma_id), soma_type, pose)
+        soma_obj.posearray.poses = self.sort_marker_positions(self._soma_obj_pose[soma_obj.id])
 
-            soma_obj.posearray.poses = self.sort_marker_positions(self._soma_obj_pose[soma_obj.id])
+        self.insert_geo_poses(soma_obj)
 
-            self.insert_geo_poses(soma_obj)
+        self.insert_soma_time_fields(soma_obj)
 
-            self.insert_soma_time_fields(soma_obj)
+        aresp = self.check_time_diff_and_update(resp.unique_ids[0],soma_obj,resp.rois[0].logtimestamp)
 
-            #This should compare 2 soma roi objects!!
-            aresp = self.check_time_diff_and_update(_id,soma_obj,resp)
+        if aresp == None or aresp.result == False:
+            soma_obj.geotype = ''
+            soma_obj.geoposearray = []
+            rospy.logerr("The polygon of %s %s is malformed (self-intersecting) => Please update geometry." % (soma_obj.type, soma_obj.id))
+            return
 
-            if aresp == None or aresp.result == False:
-                soma_obj.geotype = ''
-                soma_obj.geoposearray = []
-                rospy.logerr("The polygon of %s %s is malformed (self-intersecting) => Please update geometry." % (soma_obj.type, soma_obj.id))
-                return
 
-            self._soma_obj_msg[soma_obj.id] = soma_obj
-
+        self._soma_obj_msg[soma_obj.id] = soma_obj
+        rospy.loginfo("ROI with id %s updated successfully" %(roi_id))
 
 
 
-    def insert_soma_time_fields(self,soma_obj,timestamp=None):
+    def delete_object(self, roi_id, marker_index, marker_name, should_delete_roi):
 
-        if timestamp == None:
-
-            #convert to uint32
-            soma_obj.logtimestamp = int(rospy.get_rostime().to_sec()) & 0xffffffff
-
-            dt = datetime.utcfromtimestamp(soma_obj.logtimestamp)
-            soma_obj.loghour = int(dt.hour)
-            soma_obj.logminute = int(dt.minute)
-            soma_obj.logday = int(dt.weekday())+1
-            soma_obj.logtimeminutes = int(dt.hour)*60 + int(dt.minute)
-        else:
-            #convert to uint32
-            soma_obj.logtimestamp = timestamp & 0xffffffff
-
-            dt = datetime.utcfromtimestamp(soma_obj.logtimestamp)
-            soma_obj.loghour = int(dt.hour)
-            soma_obj.logminute = int(dt.minute)
-            soma_obj.logday = int(dt.weekday())
-            soma_obj.logtimeminutes = int(dt.hour)*60 + int(dt.minute)
-
-
-    def delete_object(self, soma_id, marker_name, should_delete_roi):
-
-        _id = self._soma_obj_ids[soma_id]
-        msg = self._soma_obj_msg[soma_id]
+        _id = self._soma_obj_ids[roi_id]
+        msg = self._soma_obj_msg[roi_id]
 
         if(should_delete_roi):
             '''If we have a update timer associated with the roi, cancel it'''
-            if hasattr(self, "vp_timer_"+soma_id):
-                getattr(self, "vp_timer_"+soma_id).cancel()
+            if hasattr(self, "vp_timer_"+roi_id):
+                getattr(self, "vp_timer_"+roi_id).cancel()
             # Get all the history object with 'id'
             try:
                 delete_service = rospy.ServiceProxy('soma/delete_rois',SOMADeleteROIs)
-                resp = delete_service(ids=[soma_id],config=self.soma_conf)
+                resp = delete_service(ids=[roi_id],config=self.soma_conf)
             except rospy.ServiceException as exc:
                 rospy.logerr("SOMA Delete Service Exception %s." % (str(exc)) )
                 return
 
             if(resp.result == False):
-                rospy.logerr("Error deleting ROI %s." % (str(soma_id)) )
+                rospy.logerr("Error deleting ROI %s." % (str(roi_id)) )
                 return
 
-            del self._soma_obj_ids[soma_id]
-            markers = self._soma_obj_markers[soma_id]
+            del self._soma_obj_ids[roi_id]
+            markers = self._soma_obj_markers[roi_id]
             for key,amarker in markers.iteritems():
                 self._server.erase(amarker.name)
                 self._server.applyChanges()
-            self.undraw_roi(self._soma_obj_msg[soma_id])
-            del self._soma_obj_msg[soma_id]
-            del self._soma_obj_markers[soma_id]
-            del self._soma_obj_pose[soma_id]
+            self.undraw_roi(self._soma_obj_msg[roi_id])
+            del self._soma_obj_msg[roi_id]
+            del self._soma_obj_markers[roi_id]
+            del self._soma_obj_pose[roi_id]
             return
+
+
+        # We only want to delete particular marker
+        del self._soma_obj_markers[roi_id][marker_index]
+
+        # We delete the particular pose of that marker
+        del self._soma_obj_pose[roi_id][marker_index]
 
         new_msg = copy.deepcopy(msg)
 
-        new_msg.posearray.poses = self.sort_marker_positions(self._soma_obj_pose[str(soma_id)])
+        new_msg.posearray.poses = self.sort_marker_positions(self._soma_obj_pose[str(roi_id)])
 
         self.insert_geo_poses(new_msg)
         self.insert_soma_time_fields(new_msg)
+
         try:
             query_service = rospy.ServiceProxy('soma/query_rois',SOMAQueryROIs)
-            resp = query_service(query_type=0,roiconfigs=[self.soma_conf],roiids=[soma_id],returnmostrecent=True)
+            resp = query_service(query_type=0,roiconfigs=[self.soma_conf],roiids=[roi_id],returnmostrecent=True)
         except rospy.ServiceException as exc:
            ros.logerr("SOMA ROI Query Service Exception, %s"%(str(exc)))
            return
 
-        aresp = self.check_time_diff_and_update(_id,new_msg,resp)
+        aresp = self.check_time_diff_and_update(resp.unique_ids[0],new_msg,resp.rois[0].logtimestamp)
 
-        if aresp == None:
+        if aresp == None or aresp.result==False:
+            rospy.logerr("Error!! Could not update ROI with id %s"%roi_id)
             return
 
-        if resp.result:
-            self._soma_obj_ids[new_msg.id] = resp.db_ids[0]
+        if aresp.result:
+            self._soma_obj_ids[new_msg.id] = resp.unique_ids[0]
             rospy.loginfo("Marker %s deleted successfully" %(marker_name))
             self._server.erase(marker_name)
             self._server.applyChanges()
@@ -642,47 +636,56 @@ class SOMAROIManager():
 
 
 
-    def update_object(self, roi):
+    def update_object(self, roi_id):
 
-        rospy.loginfo("Updating roi: %s", roi)
+        rospy.loginfo("Updating roi with id: %s", roi_id)
 
-        _id = self._soma_obj_ids[roi]
-        msg = self._soma_obj_msg[roi]
+        _id = self._soma_obj_ids[roi_id]
+        msg = self._soma_obj_msg[roi_id]
 
         new_msg = copy.deepcopy(msg)
 
-        new_msg.posearray.poses = self.sort_marker_positions(self._soma_obj_pose[roi])
+        new_msg.posearray.poses = self.sort_marker_positions(self._soma_obj_pose[roi_id])
         self.insert_geo_poses(new_msg)
         self.insert_soma_time_fields(new_msg)
 
         try:
             query_service = rospy.ServiceProxy('soma/query_rois',SOMAQueryROIs)
-            resp = query_service(query_type=0,roiconfigs=[self.soma_conf],roiids=[roi],returnmostrecent=True)
+            resp = query_service(query_type=0,roiconfigs=[self.soma_conf],roiids=[roi_id],returnmostrecent=True)
         except rospy.ServiceException as exc:
            ros.logerr("SOMA ROI Query Service Exception, %s"%(str(exc)))
            return
 
-        self.check_time_diff_and_update(_id,new_msg,resp)
+        #if(len(resp.rois) == 1):
+
+
+        aresp = self.check_time_diff_and_update(_id,new_msg,resp.rois[0].logtimestamp)
+
+        if aresp == None or aresp.result==False:
+            rospy.logerr("Error!! Could not update ROI with id %s"%roi_id)
+            return
+
+        if aresp.result:
+            rospy.loginfo("Successfully updated ROI with id %s"%roi_id)
+            self._soma_obj_ids[roi_id] = resp.unique_ids[0]
 
 
 
-    def check_time_diff_and_update(self,_id,soma_obj,resp):
+    def check_time_diff_and_update(self,_id,soma_obj,db_timestamp):
+        time_diff =  (int(rospy.get_rostime().to_sec()) & 0xffffffff)-db_timestamp
+        #print time_diff
+        if(time_diff <= 90):
+            try:
+                update_service = rospy.ServiceProxy('soma/update_roi',SOMAUpdateROI)
+                aresp = update_service(db_id=_id,object=soma_obj)
+            except rospy.ServiceException as exc:
+                ros.logerr("SOMA ROI Update Service Exception, %s"%(str(exc)))
+                return None
 
-        if(len(resp.rois) == 1):
-            time_diff =  (int(rospy.get_rostime().to_sec()) & 0xffffffff)-resp.rois[0].logtimestamp
+            if(aresp.result):
+                rospy.loginfo("Successfully updated the ROI instance in db (%s %s)"%(soma_obj.type,soma_obj.id))
 
-            if(time_diff <= 90):
-                try:
-                    update_service = rospy.ServiceProxy('soma/update_roi',SOMAUpdateROI)
-                    aresp = update_service(db_id=_id,object=soma_obj)
-                except rospy.ServiceException as exc:
-                   ros.logerr("SOMA ROI Update Service Exception, %s"%(str(exc)))
-                   return None
-
-                if(resp.result):
-                    rospy.loginfo("Successfully updated the ROI instance in db (%s %s)"%(soma_obj.type,soma_obj.id))
-
-                return aresp
+            return aresp
         try:
             insert_service = rospy.ServiceProxy('soma/insert_rois',SOMAInsertROIs)
             aresp = insert_service(objects=[soma_obj])
@@ -691,11 +694,6 @@ class SOMAROIManager():
             ros.logerr("Service Exception, %s"%(str(exc)))
             return None
 
-        if(resp.result):
-            self._soma_obj_ids[soma_obj.id] = resp.db_ids[0]
-            #rospy.loginfo("A new instance of ROI %s has been added successfully" %(soma_obj.id))
-        else:
-            rospy.logerr("Error inserting ROI %s"%(soma_obj.id))
 
     def insert_geo_poses(self,msg):
         coordinates = PoseArray()
@@ -794,7 +792,7 @@ class SOMAROIManager():
 
         for point in points:
             p = Point()
-            pose = point#self._soma_obj_pose[point]
+            pose = point
 
             p.x = pose.position.x - int_marker.pose.position.x
             p.y = pose.position.y - int_marker.pose.position.y
