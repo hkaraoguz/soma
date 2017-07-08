@@ -94,9 +94,11 @@ void MainWindow::on_timestepSlider_valueChanged(int value)
 
         this->somaobjects =  rosthread.querySOMAObjects(this->objectquery);
 
-        sensor_msgs::PointCloud2 state =  rosthread.getSOMACombinedObjectCloud(somaobjects);
+        rosthread.visualizeWorldState(somaobjects);
 
-        rosthread.publishSOMAObjectCloud(state);
+       /* sensor_msgs::PointCloud2 state =  rosthread.getSOMACombinedObjectCloud(somaobjects);
+
+        rosthread.publishSOMAObjectCloud(state);*/
 
         ui->noretrievedobjectslabel->setText(QString::number(somaobjects.size()));
 
@@ -245,8 +247,12 @@ void MainWindow::handleMapInfoReceived()
     ui->timestepSlider->setEnabled(true);
     ui->sliderCBox->setChecked(true);
 
+    for(int i = 0; i < ui->weekdaysComboBox->count(); i++)
+    {
+        ui->weekdaysComboBox->removeItem(i);
+    }
 
-
+    ui->weekdaysComboBox->clear();
 
     /********************** Prepare the Weekdays ComboBox ****************************/
     QStringList weekdays;
@@ -263,7 +269,7 @@ void MainWindow::handleMapInfoReceived()
     /************************************************************************************/
 
     // Clear any remaining ROI's in the RVIZ
-    rosthread.drawROIwithID("-1");
+    rosthread.drawROIwithID("-1","");
 
     ui->timestepSlider->setValue(1);
     emit ui->timestepSlider->valueChanged(1);
@@ -382,6 +388,14 @@ void MainWindow::handleSOMAROINames(std::vector<SOMAROINameIDConfig> roinameidco
 
     this->roinameidconfigs = roinameidconfigs;
 
+    for(int i =0; i < ui->roiComboBox->count(); i++)
+    {
+        ui->roiComboBox->removeItem(i);
+    }
+
+    ui->roiComboBox->clear();
+
+
     ui->roiComboBox->addItem("");
 
     for(int i = 0; i < roinameidconfigs.size();i++)
@@ -405,12 +419,12 @@ void MainWindow::on_roiComboBox_currentIndexChanged(const QString &arg1)
     QString str = arg1;
     QStringList numpart = str.split(" ");
 
-    if(numpart.size()>=2){
+    if(numpart.size() >= 2){
         // qDebug()<<numpart[1];
-        rosthread.drawROIwithID(numpart[1].toStdString());
+        rosthread.drawROIwithID(numpart[numpart.size()-2].toStdString(), numpart[numpart.size()-1].toStdString());
     }
     else
-        rosthread.drawROIwithID("-1");
+        rosthread.drawROIwithID("-1","");
 }
 
 void MainWindow::on_queryButton_clicked()
@@ -436,8 +450,6 @@ void MainWindow::on_queryButton_clicked()
     bool lowerdatecbox = ui->lowerDateCBox->isChecked();
 
     bool upperdatecbox = ui->upperDateCBox->isChecked();
-
-    mongo::BSONObjBuilder mainbuilder;
 
     if(lowerdatecbox || upperdatecbox)
     {
@@ -569,21 +581,7 @@ void MainWindow::on_queryButton_clicked()
             queryObjects.request.objecttypes = typelist;
 
         }
-       /* else if(typeequals){
-            QModelIndexList indexlist = ui->listViewObjectTypes->selectionModel()->selectedIndexes();
 
-            std::vector<std::string> list;
-
-            foreach(const QModelIndex& indx, indexlist)
-            {
-                QString data = indx.data().toString();
-
-                list.push_back(data.toStdString());
-            }
-
-
-            queryObjects.request.objecttypes = list;
-        }*/
         if(idequals)
         {
             QModelIndexList indexlist = ui->listViewObjectIDs->selectionModel()->selectedIndexes();
@@ -629,10 +627,11 @@ void MainWindow::on_queryButton_clicked()
 
         QString roiindex = QString::fromStdString(this->roinameidconfigs[roiintindex-1].id);
 
-        soma_msgs::SOMAROIObject obj =  rosthread.getSOMAROIwithID(roiindex.toInt());
+        soma_msgs::SOMAROIObject obj =  rosthread.getSOMAROIwithIDConfig(roiindex.toInt(),this->roinameidconfigs[roiintindex-1].config);
 
 
         queryObjects.request.roi_id = obj.id;
+        queryObjects.request.roi_config = obj.config;
         queryObjects.request.useroi_id = true;
 
 
@@ -656,9 +655,11 @@ void MainWindow::on_queryButton_clicked()
 
     ui->noretrievedobjectslabel->setText(QString::number(somaobjects.size()));
 
-    sensor_msgs::PointCloud2 state =  rosthread.getSOMACombinedObjectCloud(somaobjects);
+    rosthread.visualizeWorldState(somaobjects);
 
-    rosthread.publishSOMAObjectCloud(state);
+   /* sensor_msgs::PointCloud2 state =  rosthread.getSOMACombinedObjectCloud(somaobjects);
+
+    rosthread.publishSOMAObjectCloud(state);*/
 
 
     lastqueryjson = QString::fromStdString(queryObjects.response.queryjson);

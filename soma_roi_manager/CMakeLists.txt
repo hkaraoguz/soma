@@ -130,6 +130,10 @@ install(DIRECTORY scripts/
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
         USE_SOURCE_PERMISSIONS)
 
+install(DIRECTORY config/ 
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config
+)
+
 #install (FILES 
 # 	src/soma_roi_manager/soma_roi_drawer.py
 #        DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

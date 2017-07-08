@@ -1,4 +1,4 @@
-#include "querybuilder.h"
+#include <query_manager/querybuilder.h>
 
 QueryBuilder::QueryBuilder()
 {
@@ -90,10 +90,21 @@ mongo::BSONObj QueryBuilder::buildSOMAStringArrayBasedQuery(const std::vector<st
 
     realIndexes.insert(realIndexes.end(),objectIndexes.begin(),objectIndexes.end());
 
-    mongo::BSONArrayBuilder arrbuilder;
+    // This is the main builder
+    mongo::BSONObjBuilder builder3;
 
+    // This is the main array structure that holds the individual fields
+    mongo::BSONArrayBuilder arrbuilder2;
+
+    // For each of the fields
     for(int j = 0 ;j < fieldnames.size(); j++)
     {
+        // We will build an or array
+        mongo::BSONArrayBuilder arrbuilder;
+
+        // Here we will hold the variables of a particular field
+        mongo::BSONObjBuilder builder2;
+
 
         for(int i = realIndexes[j]; i < realIndexes[j]+objectIndexes[j]; i++)
         {
@@ -103,14 +114,23 @@ mongo::BSONObj QueryBuilder::buildSOMAStringArrayBasedQuery(const std::vector<st
 
             arrbuilder.append(builder.obj());
 
+
+
         }
+
+        // This is the bson object for a field
+        builder2.append("$or",arrbuilder.arr());
+
+        // We add the particular field to the main array
+        arrbuilder2.append(builder2.obj());
+
+
     }
-    mongo::BSONObjBuilder builder;
+     // This is the final object
+     builder3.append(arrayOperator,arrbuilder2.arr());
 
-    builder.append(arrayOperator,arrbuilder.arr());
 
-
-    return builder.obj();
+    return builder3.obj();
 
 
 }
@@ -135,12 +155,10 @@ mongo::BSONObj QueryBuilder::buildSOMATimeQuery(int lowerhour,int lowerminute, i
         lowerhourbuilder.append("$gte",totalminutes);
         hourbuilder.append("logtimeminutes",lowerhourbuilder.obj());
 
-        /*   lowerminutebuilder.append("$gte",lowerminute);
 
-        minutebuilder.append("logminute",lowerminutebuilder.obj());*/
 
         builder.appendElements(hourbuilder.obj());
-        /*  builder.appendElements(minutebuilder.obj());*/
+
 
 
     }

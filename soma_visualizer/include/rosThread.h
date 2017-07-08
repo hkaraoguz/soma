@@ -10,6 +10,8 @@
 #include <soma_msgs/SOMAROIObject.h>
 #include <soma_manager/SOMAQueryObjs.h>
 #include <soma_roi_manager/DrawROI.h>
+#include <soma_manager/SOMADrawMesh.h>
+#include <geometry_msgs/Pose.h>
 #include <algorithm>    // std::unique, std::distance
 #include <vector>       // std::vector
 
@@ -45,22 +47,22 @@ public:
      // Shutdown the node
      void shutdownROS();
 
-     // Returns the combined cloud of soma2objects
-     sensor_msgs::PointCloud2 getSOMACombinedObjectCloud(const std::vector<soma_msgs::SOMAObject>& somaobjects);
 
-    // sensor_msgs::PointCloud2 getSOMA2ObjectCloudsWithTimestep(int timestep);
+     void visualizeWorldState(const std::vector<soma_msgs::SOMAObject>& somaobjects);
 
-     // Publish SOMA combined Object Cloud
-     void publishSOMAObjectCloud(sensor_msgs::PointCloud2 msg);
+
+
 
      // Return the name of the current map
      std::string getMapName();
 
      // Service call for drawing roi with id
-     void drawROIwithID(std::string id);
+     void drawROIwithID(std::string id, std::string config);
+
+
 
      // Get the SOMA ROI with id
-     soma_msgs::SOMAROIObject getSOMAROIwithID(int id);
+     soma_msgs::SOMAROIObject getSOMAROIwithIDConfig(int id, std::string config);
 
 
      // Query the SOMA objects
@@ -80,15 +82,27 @@ private:
      ros::ServiceClient roi_query_client;
      ros::ServiceClient object_query_client;
      ros::ServiceClient roi_draw_client;
+     ros::ServiceClient mesh_draw_client;
 
 
      SOMATimeLimits limits;
+
+     // Returns the meshes of soma objects
+     soma_manager::SOMADrawMesh getObjectMeshes(const std::vector<soma_msgs::SOMAObject>& somaobjects);
+
+     // Returns the combined cloud of soma objects
+     sensor_msgs::PointCloud2 getCombinedObjectCloud(const std::vector<soma_msgs::SOMAObject>& somaobjects);
+
+     // Publish SOMA combined Object Cloud
+     void publishSOMAObjectCloud(sensor_msgs::PointCloud2 msg);
 
      // Get the ROIs from db
      void fetchSOMAROIs();
 
      // Get the object types,ids and configs from db
      void fetchSOMAObjectTypesIDsConfigs();
+
+     void drawMesh(soma_manager::SOMADrawMesh drawmesh);
 
      std::string map_name;
      std::string map_unique_id;

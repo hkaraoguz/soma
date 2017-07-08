@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import roslib; roslib.load_manifest("soma_manager")
+import roslib; roslib.load_manifest("soma_object_manager")
 import rospy
 from rospkg import RosPack
 import json
@@ -63,32 +63,27 @@ def b_func(x):
     return value
 
 
-class SOMAManager():
+class SOMAObjectManager():
 
     def __init__(self, soma_conf, config_file=None):
 
-        #self.soma_map = soma_map
+        rospy.init_node("soma_object_manager")
+
         self.soma_conf = soma_conf
+
         if config_file:
             self._config_file = config_file
         else:
             # default file
             rp = RosPack()
-            #rospy.loginfo("%s",rp.list())
             path = rp.get_path('soma_objects') + '/config/'
             filename = 'default.json'
             self._config_file=path+filename
+
         self._soma_obj_ids = dict()
         self._soma_obj_msg = dict()
 
         self._interactive = True
-
-        self._msg_store=MessageStoreProxy(database="somadata", collection="object")
-
-        #Debug purposes
-        #objs = self._msg_store.query(SOMAObject._type, message_query={}, projection_query={"pose":1, "mesh":1},limit=2, sort_query=[("_id",-1)])
-	    #objs = self._msg_store.query(SOMAObject._type, message_query={})
-        #print objs
 
          # Get the SOMA map name and unique id
         resp = self._init_map()
@@ -99,7 +94,7 @@ class SOMAManager():
         self.soma_map = resp.map_name
         self.map_unique_id = resp.map_unique_id
 
-        rospy.loginfo("Map name: %s Map Unique ID: %s",self.soma_map,self.map_unique_id)
+        rospy.loginfo("SOMA Object Manager received Map name: %s Map Unique ID: %s",self.soma_map,self.map_unique_id)
 
         if(self._check_soma_insertservice() == False):
             return None
@@ -107,7 +102,7 @@ class SOMAManager():
         if(self._check_soma_queryservice() == False):
             return None
 
-        self._server = InteractiveMarkerServer("soma")
+        self._server = InteractiveMarkerServer("soma_objects")
 
         self._init_types()
 
@@ -115,13 +110,17 @@ class SOMAManager():
 
         self.load_objects()
 
+
+
+        rospy.loginfo("Running SOMA Object Manager ( Configuration Name: %s, Object Types File Path: %s)", self.soma_conf, self._config_file)
+
         rospy.spin()
 
     # Listens the map information from soma map_manager
     def _init_map(self):
-        print "Waiting for the map info from soma_map_manager..."
+        rospy.loginfo("Waiting for the map info from soma_map_manager...")
         try:
-            rospy.wait_for_service('soma/map_info', timeout=5)
+            rospy.wait_for_service('soma/map_info', timeout=10)
             rospy.loginfo("SOMA map info received...")
         except:
             rospy.logerr("No SOMA map_info service!! Quitting...")
@@ -138,21 +137,21 @@ class SOMAManager():
     def _check_soma_insertservice(self):
         print "Waiting for SOMA object insert service..."
         try:
-            rospy.wait_for_service('soma/insert_objects', timeout=5)
-            rospy.loginfo("SOMA insert service is active...")
+            rospy.wait_for_service('soma/insert_objects', timeout=10)
+            rospy.loginfo("SOMA object insert service is active...")
             return True
         except:
-            rospy.logerr("No SOMA insert service!! Quitting...")
+            rospy.logerr("No SOMA object insert service!! Quitting...")
             return False
     # Checks the soma insert service information from soma data_manager
     def _check_soma_queryservice(self):
         print "Waiting for SOMA object query service..."
         try:
-            rospy.wait_for_service('soma/query_objects', timeout=5)
+            rospy.wait_for_service('soma/query_objects', timeout=10)
             rospy.loginfo("SOMA object query service is active...")
             return True
         except:
-            rospy.logerr("No SOMA query service!! Quitting...")
+            rospy.logerr("No SOMA object query service!! Quitting...")
             return False
 
     def _init_types(self):
@@ -289,12 +288,15 @@ class SOMAManager():
 
         try:
             resp = insert_objects(objects)
-            if(resp.result == True):
-                rospy.loginfo("Object inserted successfully")
-            else:
-                rospy.logerr("Error inserting object!! Check DB services...")
-        except:
-            rospy.logerr("Error inserting object!! soma/insert_objects service call failed!")
+        except rospy.ServiceException as exc:
+            rospy.logerr("Error inserting object!! soma/insert_objects service call failed! %s"%(str(exc)))
+            return None
+
+        if resp and resp.result == True:
+            rospy.loginfo("Object inserted successfully")
+        else:
+            rospy.logerr("Error inserting object!! Check DB services...")
+
 
         return resp
 
@@ -317,6 +319,9 @@ class SOMAManager():
 
         resp = self._insert_object_to_DB(soma_obj)
 
+        if resp == None:
+            return
+
         if resp.result == True:
             self._soma_obj_ids[soma_obj.id] = resp.db_ids[0]
             self._soma_obj_msg[soma_obj.id] = soma_obj
@@ -331,21 +336,23 @@ class SOMAManager():
 
         ids = list()
 
-        delete_object = rospy.ServiceProxy('soma/delete_objects',SOMADeleteObjs)
+        delete_soma_objects = rospy.ServiceProxy('soma/delete_objects',SOMADeleteObjs)
 
         ids.append(soma_id)
         try:
-            resp = delete_object(ids)
-            if(resp.result == True):
-                self._server.erase(soma_id)
-                self._server.applyChanges()
-                rospy.loginfo("Object deleted successfully")
-            else:
-                rospy.logerr("Error deleting object!! Check DB services...")
-        except:
-            rospy.logerr("Error deleting object!! soma/delete_objects service call failed!")
+            resp = delete_soma_objects(ids,self.soma_conf)
+        except rospy.ServiceException as exc:
+            rospy.logerr("Error deleting object!! soma/delete_objects service call failed! %s"%(str(exc)))
+            return
 
-        #self._msg_store.delete(str(_id))
+        if resp and resp.result == True:
+            self._server.erase(soma_id)
+            self._server.applyChanges()
+            rospy.loginfo("Object deleted successfully")
+        else:
+            rospy.logerr("Error deleting object!! Check DB services...")
+
+
 
 
 
@@ -364,12 +371,15 @@ class SOMAManager():
         update_object = rospy.ServiceProxy('soma/update_object',SOMAUpdateObject)
         try:
             resp = update_object(str(_id),new_msg)
-            if resp.result == True:
-                rospy.loginfo("Object updated successfully")
-            else:
-                rospy.logerr("Error updating object!! Check DB services...")
         except:
             rospy.logerr("Error updating object!! soma/update object service call failed!")
+            return
+
+        if resp and resp.result == True:
+            rospy.loginfo("Object updated successfully")
+        else:
+            rospy.logerr("Error updating object!! Check DB services...")
+
         #print resp
 
     def create_object_marker(self, soma_obj, soma_type, pose):
@@ -425,19 +435,3 @@ class SOMAManager():
         int_marker.controls.append(menu_control)
 
         return int_marker
-
-
-if __name__=="__main__":
-
-    # TODO: add list command
-
-    parser = argparse.ArgumentParser(prog='soma.py')
-    #parser.add_argument("map", nargs=1, help='Name of the used 2D map')
-    parser.add_argument("conf", nargs=1, help='Name of the object configuration')
-    parser.add_argument('-t', metavar='config-file')
-
-    args = parser.parse_args(rospy.myargv(argv=sys.argv)[1:])
-
-    rospy.init_node("soma_obj_manager")
-    rospy.loginfo("Running SOMA Manual Object Manager ( conf: %s, types: %s)", args.conf[0], args.t)
-    SOMAManager(args.conf[0],args.t)

@@ -1,6 +1,6 @@
 #include <ros/ros.h>
 #include <mongodb_store/message_store.h>
-#include "querybuilder.h"
+#include <query_manager/querybuilder.h>
 #include <soma_manager/SOMAQueryObjs.h>
 #include <soma_manager/SOMAQueryROIs.h>
 #include <soma_map_manager/MapInfo.h>
@@ -15,7 +15,7 @@ std::string roidbname="somadata";
 std::string objectscollectionname="object";
 std::string roiscollectionname="roi";
 
-std::string map_name="kthfloor6";
+std::string map_name="";
 
 struct SOMATimeLimits{
 
@@ -58,10 +58,6 @@ void fetchSOMAROIConfigsIDs(std::vector<std::string>& configs, std::vector<std::
 
     builder.append("map_name",map_name);
 
-    // qDebug()<<str;
-
-    // builder.appendElements(mongo::fromjson(str.toStdString()));
-
 
     std::vector<boost::shared_ptr<soma_msgs::SOMAROIObject> > rois;
 
@@ -85,8 +81,6 @@ void fetchSOMAROIConfigsIDs(std::vector<std::string>& configs, std::vector<std::
 
 
 
-            //   spr = somaobjects[i];
-
             str.append(QString::fromStdString(roi->config));
 
             str2.append(QString::fromStdString(roi->id));
@@ -102,8 +96,6 @@ void fetchSOMAROIConfigsIDs(std::vector<std::string>& configs, std::vector<std::
         // Remove duplicate names
         configsls.removeDuplicates();
 
-        // Sort the types
-        // typesls.sort(Qt::CaseInsensitive);
 
 
         QCollator collator;
@@ -211,8 +203,6 @@ void fetchSOMAObjectTypesIDsConfigs(std::vector<std::string>& types, std::vector
 
 
 
-            //   spr = somaobjects[i];
-
             str.append(QString::fromStdString(somaobjects[i]->type));
 
             str2.append(QString::fromStdString(somaobjects[i]->id));
@@ -229,7 +219,7 @@ void fetchSOMAObjectTypesIDsConfigs(std::vector<std::string>& types, std::vector
 
 
 
-            //std::cout<<somaobjects[i].use_count()<<std::endl;
+
 
 
         }
@@ -385,20 +375,9 @@ std::vector<std::pair< boost::shared_ptr<soma_msgs::SOMAROIObject>, mongo::BSONO
 
     std::vector<std::pair< boost::shared_ptr<soma_msgs::SOMAROIObject>, mongo::BSONObj> > somaroismetas;
 
-    //std::vector<boost::shared_ptr<soma_msgs::SOMAROIObject> > somarois;
 
      somastore.query(somaroismetas,queryobj);
 
-
-   /* if(somarois.size() > 0)
-    {
-        for(auto &roi:somarois)
-        {
-            res.push_back(*roi);
-            //qDebug()<<labelled_object.use_count;
-        }
-
-    }*/
 
 
 
@@ -475,6 +454,9 @@ bool handleObjectQueryRequests(soma_manager::SOMAQueryObjsRequest & req, soma_ma
 
             builder.append("id",req.roi_id);
 
+            if(req.roi_config != "")
+                builder.append("config",req.roi_config);
+
             std::vector<boost::shared_ptr<soma_msgs::SOMAROIObject> > rois;
 
             mongo::BSONObjBuilder sortquerybuilder;
@@ -537,108 +519,10 @@ bool handleObjectQueryRequests(soma_manager::SOMAQueryObjsRequest & req, soma_ma
 
             }
 
-            mongo::BSONObj bsonobj = QueryBuilder::buildSOMAStringArrayBasedQuery(list,fieldnames,objectIndexes,"$or");
+            mongo::BSONObj bsonobj = QueryBuilder::buildSOMAStringArrayBasedQuery(list,fieldnames,objectIndexes,"$and");
 
             mainbuilder.appendElements(bsonobj);
-            /*if(req.objectids.size() > 0 && req.objecttypes.size() > 0  )
-            {
-                //std::cout<<req.objectids.size()<<" "<<req.objecttypes.size()<<" "<<req.objectids[0].data()<<" "<<req.objecttypes[0].data();
-                //if()
-                if(req.objectids[0] != "" && req.objecttypes[0] != "")
-                {
 
-                    std::vector<std::string> list;
-
-                    std::vector<std::string> fieldnames;
-                    std::vector<int> objectIndexes;
-                    fieldnames.push_back("id");
-                    fieldnames.push_back("type");
-
-
-
-                    list.insert(list.end(),req.objectids.begin(),req.objectids.end());
-
-                    objectIndexes.push_back(req.objectids.size());
-
-                    list.insert(list.end(),req.objecttypes.begin(),req.objecttypes.end());
-
-                    objectIndexes.push_back(req.objecttypes.size());
-
-                    mongo::BSONObj bsonobj = QueryBuilder::buildSOMAStringArrayBasedQuery(list,fieldnames,objectIndexes,"$or");
-
-                    mainbuilder.appendElements(bsonobj);
-                }
-                else if(req.objecttypes[0] == "")
-                {
-
-
-
-                    std::vector<std::string> fieldnames;
-                    fieldnames.push_back("id");
-
-                    std::vector<int> objectIndexes;
-                    objectIndexes.push_back(req.objectids.size());
-
-                    std::vector<std::string> list;
-
-                    //   list.insert(list.end(),req.objectids.data()->begin(),req.objectids.data()->end());
-
-
-                    mongo::BSONObj bsonobj = QueryBuilder::buildSOMAStringArrayBasedQuery(req.objectids,fieldnames,objectIndexes,"$or");
-
-
-
-                    mainbuilder.appendElements(bsonobj);
-
-                }
-                else if(req.objectids[0] == "")
-                {
-                    std::vector<std::string> fieldnames;
-                    fieldnames.push_back("type");
-
-                    std::vector<int> objectIndexes;
-                    objectIndexes.push_back(req.objecttypes.size());
-
-                    mongo::BSONObj bsonobj = QueryBuilder::buildSOMAStringArrayBasedQuery(req.objecttypes,fieldnames,objectIndexes,"$or");
-
-                    mainbuilder.appendElements(bsonobj);
-
-                }
-
-            }
-            else if(req.objectids.size() > 0)
-            {
-                std::vector<std::string> fieldnames;
-                fieldnames.push_back("id");
-
-                std::vector<int> objectIndexes;
-                objectIndexes.push_back(req.objectids.size());
-
-                std::vector<std::string> list;
-
-                //   list.insert(list.end(),req.objectids.data()->begin(),req.objectids.data()->end());
-
-
-                mongo::BSONObj bsonobj = QueryBuilder::buildSOMAStringArrayBasedQuery(req.objectids,fieldnames,objectIndexes,"$or");
-
-
-
-                mainbuilder.appendElements(bsonobj);
-
-            }
-            else if(req.objecttypes.size() > 0)
-            {
-                std::vector<std::string> fieldnames;
-                fieldnames.push_back("type");
-
-                std::vector<int> objectIndexes;
-                objectIndexes.push_back(req.objecttypes.size());
-
-                mongo::BSONObj bsonobj = QueryBuilder::buildSOMAStringArrayBasedQuery(req.objecttypes,fieldnames,objectIndexes,"$or");
-
-                mainbuilder.appendElements(bsonobj);
-
-            }*/
 
 
 
@@ -740,22 +624,27 @@ bool handleObjectQueryRequests(soma_manager::SOMAQueryObjsRequest & req, soma_ma
             }
 
 
-          //  std::vector<std::pair< boost::shared_ptr<soma_msgs::SOMAObject>, mongo::BSONObj> > somaobjectsmetas = querySOMAObjects(tempObject);
-
             for(size_t i = 0; i < somaobjectsmetas.size(); i++)
             {
-                resp.objects.push_back(*somaobjectsmetas[i].first);
+
                 mongo::BSONObj obj = somaobjectsmetas[i].second;
+
                 mongo::BSONElement _idelement = obj.getField("_id");
 
                 std::string _id = _idelement.toString(false);
 
+
                 /*** Removing the ObjectId(...) part from the unique id.
                  * Only the part within the paranthesis is important for us***/
-                _id.erase(_id.begin(),_id.begin()+10);
-                _id.erase(_id.end()-2,_id.end());
+                if((_id.end()-_id.begin()) > 10)
+                {
+                    _id.erase(_id.begin(),_id.begin()+10);
+                    _id.erase(_id.end()-2,_id.end());
+                    resp.objects.push_back(*somaobjectsmetas[i].first);
+                    resp.unique_ids.push_back(_id);
+                }
                 /**********************************************************/
-                resp.unique_ids.push_back(_id);
+
 
             }
 
@@ -875,7 +764,7 @@ bool handleROIQueryRequests(soma_manager::SOMAQueryROIsRequest & req, soma_manag
 
                     objectIndexes.push_back(req.roiconfigs.size());
 
-                    mongo::BSONObj bsonobj = QueryBuilder::buildSOMAStringArrayBasedQuery(list,fieldnames,objectIndexes,"$or");
+                    mongo::BSONObj bsonobj = QueryBuilder::buildSOMAStringArrayBasedQuery(list,fieldnames,objectIndexes,"$and");
 
                     mainbuilder.appendElements(bsonobj);
                 }
@@ -1040,7 +929,6 @@ bool handleROIQueryRequests(soma_manager::SOMAQueryROIsRequest & req, soma_manag
                             /**********************************************************/
                             resp.unique_ids.push_back(_id);
 
-                          //  roiobjects.erase(std::remove(roiobjects.begin(), roiobjects.end(), maxid), roiobjects.end());
 
                         }
 
@@ -1101,7 +989,7 @@ int main(int argc, char **argv){
     {
 
         ROS_INFO(
-                    "Running the SOMA query_manager_node with default arguments: ObjectsDB: somadata, ObjectsCollection: object, ROIDB: somadata, ROICollection: roi"
+                    "Running SOMA Query Manager with default arguments: objects db: somadata, objects collection: object, ROI db: somadata, ROICollection: roi"
                     );
 
 
@@ -1131,7 +1019,7 @@ int main(int argc, char **argv){
 
     ros::ServiceClient client = n.serviceClient<soma_map_manager::MapInfo>("soma/map_info");
 
-    ROS_INFO("SOMA Query Service is waiting for SOMA Map Service...");
+    ROS_INFO("SOMA Query Manager is waiting for SOMA Map Service...");
 
     while(!client.exists() && ros::ok());
 
@@ -1141,7 +1029,6 @@ int main(int argc, char **argv){
     soma_map_manager::MapInfo srv;
 
     client.call(srv);
-  //  ROS_INFO("Received map info. Map Name: %s, Map Unique ID: %s",srv.response.map_name.data(),srv.response.map_unique_id.data());
 
 
     map_name = srv.response.map_name;
@@ -1149,7 +1036,7 @@ int main(int argc, char **argv){
     ros::ServiceServer serviceobject = n.advertiseService("soma/query_objects", handleObjectQueryRequests);
     ros::ServiceServer serviceroi = n.advertiseService("soma/query_rois", handleROIQueryRequests);
 
-    ROS_INFO("Running SOMA Query Service (objects db: %s, objects collection: %s, ROI db: %s, ROI collection: %s)",objectsdbname.data(),objectscollectionname.data(),roidbname.data(),roiscollectionname.data());
+    ROS_INFO("Running SOMA Query Manager (objects db: %s, objects collection: %s, ROI db: %s, ROI collection: %s)",objectsdbname.data(),objectscollectionname.data(),roidbname.data(),roiscollectionname.data());
 
     ros::spin();
 

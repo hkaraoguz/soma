@@ -23,27 +23,31 @@ from std_msgs.msg import String
 from soma_manager.msg import *
 
 
-# SOMA Data Manager For storing and deleting data
+# SOMA Data Manager for storing, editing and deleting data
 class SOMADataManager():
 
-    def __init__(self, db_name="somadata", collection_name="object"):
+    def __init__(self, db_name="somadata", collection_name="object", roi_collection_name = "roi"):
 
        # self.soma_map_name = soma_map_name
         self._db_name = db_name
         self._collection_name = collection_name
+        self._roi_collection_name = roi_collection_name
 
         # Get the map information from soma map_manager
         resp = self._init_map()
-	if resp == None:
-		rospy.signal_shutdown("No map info provided...")
-		return None
-        #print resp
+        if resp == None:
+            rospy.signal_shutdown("No map info provided...")
+            return None
+
         self.map_name = resp.map_name
         self.map_unique_id = resp.map_unique_id
-        rospy.loginfo("Map name: %s Map unique ID: %s",self.map_name, self.map_unique_id)
+        rospy.loginfo("SOMA Data Manager received Map name: %s Map unique ID: %s",self.map_name, self.map_unique_id)
 
         # Initialize the mongodb proxy
         self._message_store = MessageStoreProxy(database=db_name, collection=collection_name)
+
+        # Initialize the mongodb proxy
+        self._roi_message_store = MessageStoreProxy(database=db_name, collection=roi_collection_name)
 
         # Object insertion service
         inss = rospy.Service('soma/insert_objects', SOMAInsertObjs, self.handle_insert_request)
@@ -54,15 +58,24 @@ class SOMADataManager():
         #Object update service
         upts = rospy.Service('soma/update_object',SOMAUpdateObject,self.handle_update_request)
 
+        #ROI insert service
+        insrois = rospy.Service('soma/insert_rois',SOMAInsertROIs,self.handle_roi_insert_request)
+
+        #ROI update service
+        updaterois = rospy.Service('soma/update_roi',SOMAUpdateROI,self.handle_roi_update_request)
+
+        #ROI delete service
+        delrois = rospy.Service('soma/delete_rois',SOMADeleteROIs,self.handle_roi_delete_request)
+
         self.new_objects_pub = rospy.Publisher('soma/new_objects_inserted',SOMANewObjects,queue_size=5)
 
         rospy.spin()
 
     # Listens the map information from soma map_manager
     def _init_map(self):
-        print "SOMA Data Manager is waiting for SOMA Map Service..."
+        rospy.loginfo("SOMA Data Manager is waiting for SOMA Map Service...")
         try:
-            rospy.wait_for_service('soma/map_info', timeout = 30)
+            rospy.wait_for_service('soma/map_info', timeout = 10)
             #rospy.loginfo("SOMA Map Info received...")
         except:
             rospy.logerr("No 'soma/map_info' service, Quitting...")
@@ -75,6 +88,77 @@ class SOMADataManager():
            rospy.logerr("Service call failed: %s"%e)
            return None
 
+
+
+    def _insert_timestamp(self,obj):
+
+        obj.logtimestamp = rospy.Time.now().secs
+
+        d = datetime.datetime.utcfromtimestamp(obj.logtimestamp)
+        obj.loghour = d.hour
+        obj.logminute = d.minute
+        obj.logday = d.isoweekday()
+        obj.logtimeminutes = obj.loghour*60 + obj.logminute
+
+        return obj
+
+
+    # Handles the delete request of soma objects
+    def handle_roi_delete_request(self,req):
+
+        for oid in req.ids:
+            res = self._roi_message_store.query(SOMAROIObject._type,message_query={"id": oid,"config":req.config})
+            #print len(res)
+            for o,om in res:
+                try:
+                    self._roi_message_store.delete(str(om['_id']))
+                except:
+                      return SOMADeleteROIsResponse(False)
+
+        return SOMADeleteROIsResponse(True)
+
+    def handle_roi_update_request(self,req):
+
+        obj = copy.deepcopy(req.object)
+
+        #if(obj.logtimestamp == 0):
+        obj = self._insert_timestamp(obj)
+
+        try:
+            self._roi_message_store.update_id(req.db_id, obj)
+        except:
+            return SOMAUpdateROIResponse(False)
+
+        return SOMAUpdateROIResponse(True)
+    # Handles the soma objects to be inserted
+    def handle_roi_insert_request(self,req):
+        _ids = []
+
+        for obj in req.objects:
+
+          if(obj.logtimestamp == 0):
+            obj = self.insert_timestamp(obj)
+
+          if (obj.header.frame_id == ""):
+              obj.header.frame_id = "/map"
+
+          obj.map_name = self.map_name
+          obj.map_unique_id = self.map_unique_id
+
+          # SOMA ROI Objects are represented as  2D Polygons
+          obj.geotype = "Polygon"
+
+          try:
+                _id = self._roi_message_store.insert(obj)
+
+                _ids.append(str(_id))
+
+          except:
+                return SOMAInsertROIsResponse(False,_ids)
+
+
+        return SOMAInsertROIsResponse(True,_ids)
+
     # Handles the soma objects to be inserted
     def handle_insert_request(self,req):
         _ids = []
@@ -82,14 +166,7 @@ class SOMADataManager():
         for obj in req.objects:
 
           if(obj.logtimestamp == 0):
-            obj.logtimestamp = rospy.Time.now().secs
-
-          d = datetime.datetime.utcfromtimestamp(obj.logtimestamp)
-          obj.loghour = d.hour
-          obj.logminute = d.minute
-          obj.logday = d.isoweekday()
-          obj.logtimeminutes = obj.loghour*60 + obj.logminute
-          obj_ids.append(obj.id)
+            obj = self._insert_timestamp(obj)
 
           if (obj.header.frame_id == ""):
               obj.header.frame_id = "/map"
@@ -127,11 +204,11 @@ class SOMADataManager():
         return SOMAInsertObjsResponse(True,_ids)
 
 
-    # Handles the delete request of soma objs
+    # Handles the delete request of soma objects
     def handle_delete_request(self,req):
 
         for oid in req.ids:
-            res = self._message_store.query(SOMAObject._type,message_query={"id": oid})
+            res = self._message_store.query(SOMAObject._type,message_query={"id": oid,"config":req.config})
             #print len(res)
             for o,om in res:
                 try:
@@ -141,20 +218,14 @@ class SOMADataManager():
 
         return SOMADeleteObjsResponse(True)
 
-    # Handles the soma objects to be inserted
+    # Handles the soma objects to be updated
     def handle_update_request(self,req):
 
         obj = req.object
 
 
         if(obj.logtimestamp == 0):
-            obj.logtimestamp = rospy.Time.now().secs
-
-        d = datetime.datetime.utcfromtimestamp(obj.logtimestamp)
-        obj.loghour = d.hour
-        obj.logminute = d.minute
-        obj.logday = d.isoweekday()
-        obj.logtimeminutes = obj.loghour*60 + obj.logminute
+            obj = self._insert_timestamp(obj)
 
         if (obj.header.frame_id == ""):
             obj.header.frame_id = "/map"
@@ -165,7 +236,7 @@ class SOMADataManager():
         obj.map_name = self.map_name
         obj.map_unique_id = self.map_unique_id
 
-        # SOMA Objects are represented as a 3D point in the world so this could be set here as point
+        # SOMA objects are represented as a 3D point in the world so this could be set here as point
         obj.geotype = "Point"
 
 

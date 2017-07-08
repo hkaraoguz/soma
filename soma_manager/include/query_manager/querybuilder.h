@@ -26,8 +26,6 @@ public:
 
     static mongo::BSONObj buildSOMATimeQuery(int lowerhour,int lowerminute, int upperhour, int upperminute,  int mode);
 
-  //  static mongo::BSONObj buildSOMATimestepQuery(int timestep);
-
     static mongo::BSONObj buildSOMAStringArrayBasedQuery(const std::vector<std::string>& list, std::vector<std::string> fieldnames, std::vector<int> objectIndexes, std::string arrayOperator);
 
 private:

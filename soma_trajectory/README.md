@@ -1,7 +1,7 @@
-SOMA Trajectory
+SOMa Trajectory
 ====
 
-SOMA Trajectory is a package to query and display human trajectories.
+SOMa Trajectory is a package to query and display human trajectories.
 It includes a simple visual interface to query spatio-temporal constraints.
 
 Prerequisites
@@ -9,7 +9,7 @@ Prerequisites
 
 - MongoDB (>=2.6)
 - mongodb_store
-- pymongo 
+- pymongo
 - shapely
 
 
@@ -27,7 +27,7 @@ Getting started (general steps)
 
     ```
 
-SOMA map manager
+SOMa map manager
 -----------------
   1. Run the soma map manager for storing, reading and publishing 2D map. Running this node is essential for running the robot_state_viewer_node:
   ```
@@ -45,7 +45,8 @@ SOMA map manager
     $ rosrun rviz rviz
     ```
 
-SOMA Trajectory Visualizer
+
+SOMa Trajectory Visualizer
 ---------------
 You can run the visualizer by calling ```rosrun soma_trajectory soma_trajectory_manager.py``` and ```rosrun soma_trajectory visualiser.py```
 
@@ -53,4 +54,4 @@ You can run the visualizer by calling ```rosrun soma_trajectory soma_trajectory_
 
 2. Run rviz to display the results of the queries. You can choose the time interval to be inspected in terms of hours from the hour the first trajectory obtained to the hour the last trajectory obtained. You can also execute temporal periodic queries by setting days of the week, and hours of a day. Whenever a checkbox inside the temporal peridic query is ticked, the regular query with the time interval will be ignored. A simple analysis is displayed in the message box in the bottom of the visualiser for each query.
 
-![marker](https://github.com/strands-project/soma/blob/indigo-devel/soma_trajectory/doc/soma_trajectory.png) 
+![marker](https://github.com/strands-project/soma/blob/indigo-devel/soma_trajectory/doc/soma_trajectory.png)

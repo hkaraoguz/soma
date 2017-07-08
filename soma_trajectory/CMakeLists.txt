@@ -55,6 +55,15 @@ include_directories(
 ## Install ##
 #############
 
+install(DIRECTORY scripts/ 
+        DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+        USE_SOURCE_PERMISSIONS)
+
+
+catkin_install_python(PROGRAMS src/soma_trajectory/visualisation.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+
 # all install targets should use catkin DESTINATION variables
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
 

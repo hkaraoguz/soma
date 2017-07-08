@@ -21,6 +21,7 @@
   <build_depend>libpcl-all-dev</build_depend>
   <build_depend>soma_msgs</build_depend>
   <build_depend>nav_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>pcl_ros</build_depend>
   <build_depend>soma_map_manager</build_depend>
@@ -36,6 +37,7 @@
   <run_depend>mongodb_store</run_depend>
   <run_depend>soma_msgs</run_depend>
   <run_depend>nav_msgs</run_depend>
+  <run_depend>geometry_msgs</run_depend>
   <run_depend>sensor_msgs</run_depend>
   <run_depend>soma_map_manager</run_depend>
   <run_depend>soma_roi_manager</run_depend>
