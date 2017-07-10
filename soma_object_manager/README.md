@@ -1,8 +1,8 @@
-SOMA object manager
+SOMa object manager
 -------------------
 SOMa object manager can be used for virtually creating a scene on a 2D map using object models.
 
-5. For running the SOMA object manager:
+5. For running the SOMa object manager:
 
     ```
     $ rosrun soma_object_manager soma_object_maner_node.py <config_name>

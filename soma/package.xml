@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
 <package>
   <name>soma</name>
-  <version>2.1.0</version>
+  <version>2.2.0</version>
   <description>The soma package</description>
+  <maintainer email="hkarao@kth.se">Hakan Karaoguz</maintainer>
   <maintainer email="l.kunze@cs.bham.ac.uk">Lars Kunze</maintainer>
   <license>MIT</license>
 
