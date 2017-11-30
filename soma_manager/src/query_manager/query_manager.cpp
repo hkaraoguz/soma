@@ -463,8 +463,11 @@ bool handleObjectQueryRequests(soma_manager::SOMAQueryObjsRequest & req, soma_ma
 
             sortquerybuilder.append("logtimestamp",-1); // sort descending to get the most recent roi at index 0
 
+            mongo::BSONObj tempObject = sortquerybuilder.obj();
 
             somastore.query(rois,builder.obj(),mongo::BSONObj(),sortquerybuilder.obj());
+
+            //qDebug()<<QString::fromStdString(tempObject.jsonString());
 
             nl.shutdown();
 
@@ -581,7 +584,7 @@ bool handleObjectQueryRequests(soma_manager::SOMAQueryObjsRequest & req, soma_ma
 
             mongo::BSONObj tempObject = mainbuilder.obj();
 
-            // qDebug()<<QString::fromStdString(tempObject.jsonString());
+          //  qDebug()<<QString::fromStdString(tempObject.jsonString());
 
            // std::vector< soma_msgs::SOMAObject > somaobjects =  querySOMAObjects(tempObject);
 

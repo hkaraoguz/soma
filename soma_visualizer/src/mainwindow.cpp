@@ -629,6 +629,7 @@ void MainWindow::on_queryButton_clicked()
 
         soma_msgs::SOMAROIObject obj =  rosthread.getSOMAROIwithIDConfig(roiindex.toInt(),this->roinameidconfigs[roiintindex-1].config);
 
+        qDebug()<<"ROI index "<<roiindex<<QString::fromStdString(obj.config)<<QString::fromStdString(obj.id);
 
         queryObjects.request.roi_id = obj.id;
         queryObjects.request.roi_config = obj.config;

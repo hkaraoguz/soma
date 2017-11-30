@@ -412,12 +412,14 @@ void RosThread::fetchSOMAROIs()
 
             for(auto &roi:query_rois.response.rois)
             {
-                SOMAROINameIDConfig roinameidconfig;
-                roinameidconfig.id = roi.id.data();
-                roinameidconfig.name = roi.type.data();
-                roinameidconfig.config = roi.config.data();
-                this->roinameidconfigs.push_back(roinameidconfig);
-                this->roiarray.push_back(roi);
+                if(this->map_name == roi.map_name){
+                    SOMAROINameIDConfig roinameidconfig;
+                    roinameidconfig.id = roi.id.data();
+                    roinameidconfig.name = roi.type.data();
+                    roinameidconfig.config = roi.config.data();
+                    this->roinameidconfigs.push_back(roinameidconfig);
+                    this->roiarray.push_back(roi);
+                }
             }
 
         }
